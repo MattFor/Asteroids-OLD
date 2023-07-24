@@ -1,220 +1,164 @@
 #define STRICT
 
+#include <vector>
 #include <string>
 
 #include "Window.h"
-#include "Entity.h"
 #include "Engine.h"
 
+#include "Entity.h"
+#include "Player.h"
 
-void Engine::start_game(Window* window)
+// Runtime
+float Engine::get_elapsed_time()
 {
-	Entity* player = new Entity(Entity::Type::Player);
-	player->velocity = -0.01f;
-	this->add_entity(player);
+	return this->timer->restart().asSeconds();
 };
 
-
-void Engine::draw_entities(sf::RenderWindow* window)
+void Engine::add_entity(Entity::Type type)
 {
-	for (auto entity : this->entities) {
-		window->draw(entity->sprite);
+	switch (type)
+	{
+	case Entity::Type::Player:
+	{
+		Player* player = new Player(++this->object_count, ++this->entity_count, type);
+		this->entities.push_back(player);
+	}
+	break;
+
+	default:
+	{
+		Entity* entity = new Entity(++this->object_count, ++this->entity_count, type);
+		this->entities.push_back(entity);
+	}
+	}
+
+	if (this->debug)
+	{
+		std::printf(("Added entity #" + std::to_string(this->entity_count) + "\n").c_str());
 	}
 };
 
-void Engine::calculate_moves(Window* window)
+// Entity Logic
+
+void Engine::calculate_moves()
 {
-	double* p_radians = new double((3.1415926536 / 180) * this->entities[0]->saved_rotation);
+	const float elapsed_time = this->get_elapsed_time();
 
-	if (sf::Keyboard::isKeyPressed(sf::Keyboard::Space) && this->entities[0]->projectile_cooldown == 0
-	//&& !(this->entities[0]->x + this->entities[0]->velocity * -sin(*p_radians)) < 0
-	//&& !(this->entities[0]->x + this->entities[0]->velocity * -sin(*p_radians)) > window->m_width
-	//&& !(this->entities[0]->y + this->entities[0]->velocity * cos(*p_radians)) < 0
-	//&& !(this->entities[0]->y + this->entities[0]->velocity * cos(*p_radians)) > window->m_height) {
-		) {
+	for (Entity* entity : this->entities)
+	{
+		entity->calc_move(elapsed_time);
 
-		this->entities[0]->projectile_cooldown = 45;
-
-		this->key_pressed++;
-		Entity* projectile = new Entity(Entity::Type::Projectile);
-		projectile->owner = "player";
-
-		projectile->x = this->entities[0]->x + this->entities[0]->velocity * -sin(*p_radians) * 3;
-		projectile->y = this->entities[0]->y + this->entities[0]->velocity * cos(*p_radians) * 3;
-
-		projectile->rotation = this->entities[0]->rotation;
-
-		projectile->velocity = this->entities[0]->velocity < 0 ? 
-			this->entities[0]->velocity - 8 : this->entities[0]->velocity + 8;
-
-		this->add_entity(projectile);
-	}
-
-	delete p_radians;
-
-	std::vector<int> marked_for_deletion_indexes{};
-
-	int i = 0;
-
-	for (auto entity : this->entities) {
-		switch (entity->type) {
-			case Entity::Type::Player: {
-				if (entity->v_dx < 0) {
-					entity->v_dx += 0.005f;
-				}
-
-				if (entity->v_dx > 0) {
-					entity->v_dx -= 0.005f;
-				}
-
-				if (entity->v_dy < 0) {
-					entity->v_dy += 0.005f;
-				}
-
-				if (entity->v_dy > 0) {
-					entity->v_dy -= 0.005f;
-				}
-
-				if (entity->rotation_change < 0) {
-					entity->rotation_change += 0.07f;
-				}
-
-				if (entity->rotation_change > 0) {
-					entity->rotation_change -= 0.07f;
-				}
-
-				double radians = (3.1415926536 / 180) * entity->saved_rotation;
-
-				if (last_pressed_forward_flag) {
-					entity->v_dx = entity->velocity * -sin(radians);
-					entity->v_dy = entity->velocity * cos(radians);
-				}
-
-				entity->x += entity->v_dx;
-				entity->y += entity->v_dy;
-
-				entity->rotation += entity->rotation_change;
-
-				// Debug information
-				if (this->debug) {
-					std::printf(("X: " + std::to_string(entity->x) +
-						" Y: " + std::to_string(entity->y) +
-						" vDx: " + std::to_string(entity->v_dx) +
-						" vDy: " + std::to_string(entity->v_dy) +
-						" Vel: " + std::to_string(entity->velocity) +
-						" R: " + std::to_string(entity->rotation_change) +
-						" Rc: " + std::to_string(entity->rotation_change) +
-						" Key: " + std::to_string(this->key_pressed) +
-						" Cd: " + std::to_string(entity->projectile_cooldown) +
-						'\n').c_str());
-				}
-
-				if (abs(entity->velocity) > 5) {
-					entity->velocity = entity->velocity < 0 ? -5 : 5;
-				}
-
-				if (abs(entity->rotation_change) > 8) {
-					entity->rotation_change = entity->rotation_change < 0 ? -8 : 8;
-				}
-
-				if (abs(entity->rotation_change) < 0.4f && !key_pressed > 0) {
-					entity->rotation_change = 0;
-				}
-
-				if (entity->x <= 0) {
-					entity->x = window->m_width - 1;
-				}
-
-				if (entity->x >= window->m_width) {
-					entity->x = 1;
-				}
-
-				if (entity->y >= window->m_height) {
-					entity->y = 1;
-				}
-
-				if (entity->y <= 0) {
-					entity->y = window->m_height - 1;
-				}
-
-				if (entity->projectile_cooldown != 0) {
-					entity->projectile_cooldown--;
-				}
-
-				break;
-			}
-
-			case Entity::Type::Projectile: {
-
-				double radians = (3.1415926536 / 180) * entity->rotation;
-
-				entity->v_dx = entity->velocity * -sin(radians);
-				entity->v_dy = entity->velocity * cos(radians);
-
-				entity->x += entity->v_dx;
-				entity->y += entity->v_dy;
-
-				if (entity->y < 0 || entity->x < 0 || entity->x > window->m_height || entity->x > window->m_width) {
-					marked_for_deletion_indexes.push_back(i);
-				}
-
-				break;
-			}
+		if (this->debug)
+		{
+			std::printf((
+				"X: " + std::to_string(entity->x) +
+				" Y: " + std::to_string(entity->y) +
+				" vDx: " + std::to_string(entity->dx) +
+				" vDy: " + std::to_string(entity->dy) +
+				" Vel: " + std::to_string(entity->velocity) +
+				" R: " + std::to_string(entity->rotation) +
+				" Key: " + std::to_string(this->key) +
+				'\n').c_str());
 		}
-
-		i++;
-	}
-
-	for (int id : marked_for_deletion_indexes) {
-		if (this->debug) {
-			std::printf(("Entity " + std::to_string(id) + " | " + std::to_string(this->entities[id]->id) + " deleted!" + "\n").c_str());
-		}
-
-		this->entities.erase(this->entities.begin() + id);
 	}
 };
-
 
 void Engine::execute_moves()
 {
-	for (auto entity : this->entities) {
-		entity->sprite.rotate(entity->rotation_change);
-		entity->sprite.setPosition(entity->x, entity->y);
+	for (auto entity : this->entities)
+	{
+		entity->move();
+		entity->rotate();
 	}
 };
 
+// Graphics
 
-void Engine::add_entity(Entity* entity)
+void Engine::apply_textures(Window* window)
 {
-	this->entity_ids++;
-	entity->id = this->entity_ids;
+	for (Entity* entity : this->entities) {
+		if (entity->loaded)
+			continue;
 
-	this->entities.push_back(entity);
-
-	if (this->debug) {
-		std::printf(("Added entity " + std::to_string(this->entity_ids) + "\n").c_str());
+		entity->set_texture(this->textures[(int)entity->type]);
 	}
 };
 
-
-std::string Engine::load_textures(Window* window)
+void Engine::draw_all(sf::RenderWindow* window)
 {
+	this->draw_objects(window);
+	this->draw_entities(window);
 
-	sf::Texture player_texture;
-	sf::Texture projectile_texture;
+	window->display();
+};
 
-	if (!player_texture.loadFromFile("./textures/as_vec_player.png"))
-		return "Error loading PLAYER TEXTURE: as_vec_player.png in /textures/\n";
+void Engine::draw_entities(sf::RenderWindow* window)
+{
+	for (Entity* entity : this->entities)
+	{
+		window->draw(*entity->sprite);
+	}
+};
 
-	if (!projectile_texture.loadFromFile("./textures/as_vec_projectile.png"))
-		return "Error loading PROJECTILE TEXTURE: as_vec_projectile.png in /textures/\n";
+void Engine::draw_objects(sf::RenderWindow* window)
+{
+	for (Object* object : this->objects)
+	{
+		window->draw(*object->sprite);
+	}
+};
 
-	textures.push_back(player_texture);
-	std::printf("[TEXTURE LOADED] - PLAYER\n");
+// Start up
 
-	textures.push_back(projectile_texture);
-	std::printf("[TEXTURE LOADED] - PROJECTILE\n");
+int Engine::initialize(Window* window)
+{
+	std::string error = this->load_textures();
+
+	if (error != "")
+	{
+		std::printf(error.c_str());
+		return LOADING_TEXTURE_FAILURE;
+	}
+
+	// Add player entity
+	this->add_entity(Entity::Type::Player);
+
+	// Set coordinates in the middle of the playable area
+	this->entities[0]->x = (float)window->width / 2;
+	this->entities[0]->y = (float)window->height / 2;
+
+	// Move the player to the coordinates
+	this->entities[0]->move();
+
+	return STARTUP_SUCCESS;
+};
+
+std::string Engine::load_textures()
+{
+	std::string texture_filenames[2] = {
+		"as_vec_player",
+		"as_vec_projectile"
+	};
+
+	std::string texture_name[2] = {
+		"PLAYER",
+		"PROJECTILE"
+	};
+
+	for (int i = 0; i < 2; i++)
+	{
+		sf::Texture* texture = new sf::Texture();
+
+		if (!texture->loadFromFile("./textures/" + texture_filenames[i] + ".png"))
+		{
+			delete texture; // Prevent memory leak
+			return "Error loading " + texture_name[i] + ": " + texture_filenames[i] + ".png in /textures/\n";
+		}
+
+		this->textures.push_back(texture);
+		std::printf(("[TEXTURE LOADED] - " + texture_name[i] + " - ./textures/" + texture_filenames[i] + '\n').c_str());
+	}
 
 	return "";
 };
-

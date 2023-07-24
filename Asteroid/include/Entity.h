@@ -6,57 +6,47 @@
 #pragma once
 
 #include "SFML/Graphics.hpp"
-
 #include "Window.h"
 
+#include "Object.h"
 
-class Entity
+class Entity : public Object
 {
 public:
 	enum class Type : int
 	{
 		Player,
 		Projectile,
-		Asteroid_Big,
-		Asteroid_Medium,
-		Asteroid_Small,
-		Asteroid_Special,
-		Spaceship_Enemy,
+		Asteroid,
+		Enemy_Spaceship,
 		Unknown
 	};
 
-	Entity(Entity::Type type) {
-		this->type = type;
+	enum class Owner : int
+	{
+		Player,
+		Asteroid,
+		Enemy_Spaceship,
+		Unknown
 	};
 
-	~Entity() {};
+	explicit Entity(const int _id, const int id, Entity::Type type = Type::Unknown, Entity::Owner owner = Owner::Unknown)
+	{
+		this->_id = _id;
+		this->_type = Object::Type::Entity;
 
+		this->id = id;
+		this->type = type;
+		this->owner = owner;
+	};
+	~Entity() {};
 
 	int id = 0;
 
-	// x coord, y coord, velocity, direction;
-	double x = 0.0f;
-	double y = 0.0f;
-	double v_dx = 0.0f;
-	double v_dy = 0.0f;
-	double velocity = 0.0f;
-	double rotation = 0.0f;
-	double saved_rotation = 0.0f;
-	double rotation_change = 0.0f;
-
-	int projectile_cooldown = 0;
-
 	Type type = Type::Unknown;
+	Owner owner = Owner::Unknown;
 
-	std::string owner = "";
-
-	bool texture_loaded = false;
-
-	sf::Sprite sprite;
-	sf::Texture texture;
-
-	void get_texture(sf::Texture texture, Window* window);
+	virtual void calc_move(float elapsed_time);
 };
-
 
 #endif // !_ENTITY_H

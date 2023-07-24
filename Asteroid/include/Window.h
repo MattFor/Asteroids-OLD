@@ -7,41 +7,39 @@
 
 #include "SFML/Graphics.hpp"
 
-
 class Window
 {
 public:
 	Window(int height = -1, int width = -1) {
-		this->m_height = (size_t)height;
-		this->m_width = (size_t)width;
+		this->height = height;
+		this->width = width;
 
-		if (height == -1) {
-			this->m_height = (size_t)1024;
-			this->m_width = (size_t)1024;
-		}
+		if (height == -1)
+		{
+			this->height = 1024;
+			this->width = 1024;
+		};
 
 		sf::RenderWindow* window = new sf::RenderWindow();
 
-		window->create(sf::VideoMode((unsigned int)m_height, (unsigned int)m_width), "Asteroid");
+		window->create(sf::VideoMode(height, width), "Asteroids");
 
-		this->m_wnd = window;
-		this->m_wnd->setVerticalSyncEnabled(true);
-		//this->m_wnd->setFramerateLimit(144);
+		this->hwnd = window;
+		this->hwnd->setVerticalSyncEnabled(true);
+		// this->hwnd->setFramerateLimit(144);
 	};
-
 	~Window()
 	{
-		delete m_wnd;
+		delete hwnd;
 	};
 
-	size_t m_height = 0;
-	size_t m_width = 0;
+	unsigned int width = 0;
+	unsigned int height = 0;
 
-	sf::RenderWindow* m_wnd = 0;
-private:
-	size_t d_height = 0;
-	size_t d_width = 0;
+	sf::RenderWindow* hwnd = NULL;
+
+	void clear();
+	void display();
 };
-
 
 #endif // !_WINDOW_H

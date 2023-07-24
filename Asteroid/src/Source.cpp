@@ -2,15 +2,13 @@
 
 #include <stdio.h>
 
-#include "Asteroid.h"
-
+#include "Asteroids.h"
 
 int main() {
-
-	Asteroid* asteroid = new Asteroid();
-	asteroid->run();
+	Asteroids* asteroid = new Asteroids(1024, 1024);
+	asteroid->initiate();
 
 	delete asteroid;
 
-	return 0;
+	return EXIT_SUCCESS;
 };
