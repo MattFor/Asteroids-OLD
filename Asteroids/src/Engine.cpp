@@ -15,28 +15,30 @@ float Engine::get_elapsed_time()
 	return this->timer->restart().asSeconds();
 };
 
-void Engine::add_entity(Entity::Type type)
+int Engine::add_entity(Entity::Type type, Entity::Owner owner = Entity::Owner::Unknown)
 {
 	switch (type)
 	{
 	case Entity::Type::Player:
 	{
-		Player* player = new Player(++this->object_count, ++this->entity_count, type);
+		Player* player = new Player(++this->object_count, ++this->entity_count, type, Entity::Owner::Engine);
 		this->entities.push_back(player);
 	}
 	break;
 
 	default:
 	{
-		Entity* entity = new Entity(++this->object_count, ++this->entity_count, type);
+		Entity* entity = new Entity(++this->object_count, ++this->entity_count, type, owner);
 		this->entities.push_back(entity);
 	}
 	}
 
 	if (this->debug)
 	{
-		std::printf(("Added entity #" + std::to_string(this->entity_count) + "\n").c_str());
+		printf(("Added entity #" + std::to_string(this->entity_count) + "\n").c_str());
 	}
+
+	return (int)this->entities.size() - 1;
 };
 
 // Entity Logic
@@ -49,18 +51,42 @@ void Engine::calculate_moves()
 	{
 		entity->calc_move(elapsed_time);
 
-		if (this->debug)
+		entity->x = (entity->x > this->screen_width) ? 0 : (entity->x < 0) ? this->screen_width : entity->x;
+		entity->y = (entity->y > this->screen_height) ? 0 : (entity->y < 0) ? this->screen_height : entity->y;
+
+		entity->spawn_cooldown = (entity->spawn_cooldown <= 0) ? 0 : --entity->spawn_cooldown;
+
+
+		printf((std::to_string((int)entity->spawn)).c_str());
+
+		if (entity->spawn != Entity::Type::Unknown)
 		{
-			std::printf((
-				"X: " + std::to_string(entity->x) +
-				" Y: " + std::to_string(entity->y) +
-				" vDx: " + std::to_string(entity->dx) +
-				" vDy: " + std::to_string(entity->dy) +
-				" Vel: " + std::to_string(entity->velocity) +
-				" R: " + std::to_string(entity->rotation) +
-				" Key: " + std::to_string(this->key) +
-				'\n').c_str());
+			const int index = this->add_entity(entity->spawn, entity->generate_ownership());
+
+			if (entity->spawned_inheritance)
+			{
+				this->entities[index]->x = entity->x;
+				this->entities[index]->y = entity->y;
+			}
+
+			if (this->debug)
+			{
+				printf(("Entity #" + std::to_string(entity->id) + " spawned entity #" + std::to_string(index)).c_str());
+			}
 		}
+
+		//if (this->debug && entity->type == Entity::Type::Player)
+		//{
+		//	printf((
+		//		"X: " + std::to_string(entity->x) +
+		//		" Y: " + std::to_string(entity->y) +
+		//		" vDx: " + std::to_string(entity->dx) +
+		//		" vDy: " + std::to_string(entity->dy) +
+		//		" Vel: " + std::to_string(entity->velocity) +
+		//		" R: " + std::to_string(entity->angle) +
+		//		" rR: " + std::to_string(entity->get_angle()) +
+		//		'\n').c_str());
+		//}
 	}
 };
 
@@ -117,7 +143,7 @@ int Engine::initialize(Window* window)
 
 	if (error != "")
 	{
-		std::printf(error.c_str());
+		printf(error.c_str());
 		return LOADING_TEXTURE_FAILURE;
 	}
 
@@ -127,9 +153,6 @@ int Engine::initialize(Window* window)
 	// Set coordinates in the middle of the playable area
 	this->entities[0]->x = (float)window->width / 2;
 	this->entities[0]->y = (float)window->height / 2;
-
-	// Move the player to the coordinates
-	this->entities[0]->move();
 
 	return STARTUP_SUCCESS;
 };
@@ -157,7 +180,7 @@ std::string Engine::load_textures()
 		}
 
 		this->textures.push_back(texture);
-		std::printf(("[TEXTURE LOADED] - " + texture_name[i] + " - ./textures/" + texture_filenames[i] + '\n').c_str());
+		printf(("[TEXTURE LOADED] - " + texture_name[i] + " - ./textures/" + texture_filenames[i] + '\n').c_str());
 	}
 
 	return "";

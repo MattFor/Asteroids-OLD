@@ -22,9 +22,6 @@ int Asteroids::initiate()
 				this->window->hwnd->close();
 				delete this->engine;
 				return EXIT_SUCCESS;
-
-			case sf::Event::TextEntered:
-				event.key;
 			}
 		}
 
@@ -33,9 +30,8 @@ int Asteroids::initiate()
 		this->window->clear();
 		this->engine->apply_textures(this->window);
 
-		this->engine->key = sf::Keyboard::Unknown;
-
 		this->engine->calculate_moves();
+		this->engine->execute_moves();
 
 		// Display everything
 		this->engine->draw_all(this->window->hwnd);

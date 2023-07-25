@@ -6,7 +6,6 @@
 #pragma once
 
 #include "SFML/Graphics.hpp"
-#include "Window.h"
 
 #include "Object.h"
 
@@ -24,6 +23,7 @@ public:
 
 	enum class Owner : int
 	{
+		Engine,
 		Player,
 		Asteroid,
 		Enemy_Spaceship,
@@ -42,9 +42,16 @@ public:
 	~Entity() {};
 
 	int id = 0;
+	int spawn_cooldown = 0;
+
+	Type spawn = Type::Unknown;
+
+	bool spawned_inheritance = false;
 
 	Type type = Type::Unknown;
 	Owner owner = Owner::Unknown;
+
+	Entity::Owner generate_ownership();
 
 	virtual void calc_move(float elapsed_time);
 };

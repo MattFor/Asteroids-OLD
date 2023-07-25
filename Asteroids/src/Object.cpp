@@ -9,12 +9,12 @@ void Object::move()
 
 void Object::rotate()
 {
-	this->sprite->setRotation(this->rotation);
+	this->sprite->setRotation(this->angle);
 };
 
-void Object::get_rotation()
+float Object::get_angle()
 {
-	this->sprite->getRotation();
+	return this->sprite->getRotation();
 };
 
 void Object::set_texture(sf::Texture* texture)

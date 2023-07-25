@@ -24,6 +24,8 @@ public:
 		delete texture;
 	};
 
+	float angle = 0.0f;
+
 	float x = 0.0f;
 	float y = 0.0f;
 
@@ -40,7 +42,8 @@ public:
 
 	void move();
 	void rotate();
-	void get_rotation();
+
+	float get_angle();
 
 	virtual void set_texture(sf::Texture*);
 

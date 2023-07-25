@@ -5,10 +5,10 @@
 #include "Asteroids.h"
 
 int main() {
-	Asteroids* asteroid = new Asteroids(1024, 1024);
-	asteroid->initiate();
+	Asteroids* asteroids = new Asteroids(1024, 1024);
+	asteroids->initiate();
 
-	delete asteroid;
+	delete asteroids;
 
 	return EXIT_SUCCESS;
 };
