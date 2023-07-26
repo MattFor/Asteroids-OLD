@@ -12,28 +12,15 @@
 class Entity : public Object
 {
 public:
-	enum class Type : int
-	{
-		Player,
-		Projectile,
-		Asteroid,
-		Enemy_Spaceship,
-		Unknown
-	};
-
-	enum class Owner : int
-	{
-		Engine,
-		Player,
-		Asteroid,
-		Enemy_Spaceship,
-		Unknown
-	};
-
-	explicit Entity(const int _id, const int id, Entity::Type type = Type::Unknown, Entity::Owner owner = Owner::Unknown)
+	explicit Entity(
+		const int _id,
+		const int id,
+		Spawnable type = Spawnable::Unknown,
+		Spawnable owner = Spawnable::Unknown
+	)
 	{
 		this->_id = _id;
-		this->_type = Object::Type::Entity;
+		this->_type = Object::ElementType::Dynamic;
 
 		this->id = id;
 		this->type = type;
@@ -42,17 +29,17 @@ public:
 	~Entity() {};
 
 	int id = 0;
-	int spawn_cooldown = 0;
 
-	Type spawn = Type::Unknown;
+	// Gameplay
+	int spawn_cooldown = 0;
 
 	bool spawned_inheritance = false;
 
-	Type type = Type::Unknown;
-	Owner owner = Owner::Unknown;
+	Spawnable type = Spawnable::Unknown;
+	Spawnable owner = Spawnable::Unknown;
+	Spawnable spawn = Spawnable::Unknown;
 
-	Entity::Owner generate_ownership();
-
+	// Movement
 	virtual void calc_move(float elapsed_time);
 };
 

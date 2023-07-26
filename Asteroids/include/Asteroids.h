@@ -11,15 +11,16 @@
 class Asteroids
 {
 public:
-	Asteroids(int height = -1, int width = -1)
+	Asteroids(const int width = -1, int height = -1, bool fullscreen = false)
 	{
 		// Automatically calculate window size if not specified.
-		this->window = new Window(height, width);
+		this->window = new Window(width, height, fullscreen);
+		this->engine = new Engine(this->window->width, this->window->height);
 	};
 	~Asteroids() {};
 
 	Window* window = NULL;
-	Engine* engine = new Engine();
+	Engine* engine = NULL;
 
 	int initiate();
 };

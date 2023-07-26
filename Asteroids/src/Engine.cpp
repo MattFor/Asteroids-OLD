@@ -6,43 +6,47 @@
 #include "Window.h"
 #include "Engine.h"
 
-#include "Entity.h"
-#include "Player.h"
-
 // Runtime
 float Engine::get_elapsed_time()
 {
 	return this->timer->restart().asSeconds();
 };
 
-int Engine::add_entity(Entity::Type type, Entity::Owner owner = Entity::Owner::Unknown)
+int Engine::spawn(Object::Spawnable to_spawn, Object::Spawnable spawner)
 {
-	switch (type)
+
+	switch (to_spawn)
 	{
-	case Entity::Type::Player:
+	case Object::Spawnable::Player:
 	{
-		Player* player = new Player(++this->object_count, ++this->entity_count, type, Entity::Owner::Engine);
+		Player* player = new Player(
+			++this->object_count, 
+			++this->entity_count, 
+			to_spawn, 
+			// Using spawnable here to save creating a Spawner enum
+			Object::Spawnable::Engine
+		);
+			
 		this->entities.push_back(player);
 	}
 	break;
 
 	default:
 	{
-		Entity* entity = new Entity(++this->object_count, ++this->entity_count, type, owner);
+		Entity* entity = new Entity(++this->object_count, ++this->entity_count, to_spawn, spawner);
 		this->entities.push_back(entity);
 	}
 	}
 
-	if (this->debug)
-	{
-		printf(("Added entity #" + std::to_string(this->entity_count) + "\n").c_str());
-	}
+	//if (this->debug)
+	//{
+	//	printf(("Added Object #" + std::to_string(this->object_count) + "\n").c_str());
+	//}
 
 	return (int)this->entities.size() - 1;
 };
 
 // Entity Logic
-
 void Engine::calculate_moves()
 {
 	const float elapsed_time = this->get_elapsed_time();
@@ -56,12 +60,9 @@ void Engine::calculate_moves()
 
 		entity->spawn_cooldown = (entity->spawn_cooldown <= 0) ? 0 : --entity->spawn_cooldown;
 
-
-		printf((std::to_string((int)entity->spawn)).c_str());
-
-		if (entity->spawn != Entity::Type::Unknown)
+		if (entity->spawn != Object::Spawnable::Unknown)
 		{
-			const int index = this->add_entity(entity->spawn, entity->generate_ownership());
+			const int index = this->spawn(entity->spawn, entity->type);
 
 			if (entity->spawned_inheritance)
 			{
@@ -84,7 +85,6 @@ void Engine::calculate_moves()
 		//		" vDy: " + std::to_string(entity->dy) +
 		//		" Vel: " + std::to_string(entity->velocity) +
 		//		" R: " + std::to_string(entity->angle) +
-		//		" rR: " + std::to_string(entity->get_angle()) +
 		//		'\n').c_str());
 		//}
 	}
@@ -94,65 +94,103 @@ void Engine::execute_moves()
 {
 	for (auto entity : this->entities)
 	{
-		entity->move();
-		entity->rotate();
+		entity->move(this->render_mode);
+		entity->rotate(this->render_mode);
 	}
 };
 
 // Graphics
-
-void Engine::apply_textures(Window* window)
+void Engine::apply_textures()
 {
 	for (Entity* entity : this->entities) {
 		if (entity->loaded)
 			continue;
 
-		entity->set_texture(this->textures[(int)entity->type]);
+		entity->set_texture(*this->textures[(int)entity->type]);
 	}
 };
 
-void Engine::draw_all(sf::RenderWindow* window)
+void Engine::draw_all(sf::RenderWindow& window)
 {
 	this->draw_objects(window);
 	this->draw_entities(window);
 
-	window->display();
+	window.display();
 };
 
-void Engine::draw_entities(sf::RenderWindow* window)
+void Engine::draw_entities(sf::RenderWindow& window)
 {
+	if (render_mode == RenderMode::VECTOR)
+	{
+		for (Entity* entity : this->entities)
+		{
+			window.draw(*entity->shape);
+		}
+
+		return;
+	}
+
 	for (Entity* entity : this->entities)
 	{
-		window->draw(*entity->sprite);
+		window.draw(*entity->sprite);
 	}
 };
 
-void Engine::draw_objects(sf::RenderWindow* window)
+void Engine::draw_objects(sf::RenderWindow& window)
 {
+	if (render_mode == RenderMode::VECTOR)
+	{
+		for (Object* object : this->objects)
+		{
+			window.draw(*object->shape);
+		}
+
+		return;
+	}
+
 	for (Object* object : this->objects)
 	{
-		window->draw(*object->sprite);
+		window.draw(*object->sprite);
 	}
 };
 
 // Start up
-
-int Engine::initialize(Window* window)
+int Engine::initialize(Window& window)
 {
-	std::string error = this->load_textures();
-
-	if (error != "")
+	if (render_mode == RenderMode::TEXTURE)
 	{
-		printf(error.c_str());
-		return LOADING_TEXTURE_FAILURE;
+		printf("Initializing in TEXTURE GRAPHICS mode.\n");
+
+		std::string error = this->load_textures();
+
+		if (error != "")
+		{
+			printf(error.c_str());
+			return LOADING_TEXTURE_FAILURE;
+		}
+	} 
+	else
+	{
+		printf("Initializing in VECTOR GRAPHICS mode.\n");
 	}
 
 	// Add player entity
-	this->add_entity(Entity::Type::Player);
+	this->spawn(Object::Spawnable::Player, Object::Spawnable::Engine);
 
 	// Set coordinates in the middle of the playable area
-	this->entities[0]->x = (float)window->width / 2;
-	this->entities[0]->y = (float)window->height / 2;
+	this->entities[0]->x = (float)window.width / 2;
+	this->entities[0]->y = (float)window.height / 2;
+
+	if (render_mode == RenderMode::VECTOR)
+	{
+		std::vector<sf::Vector2f> points = {
+			{ 0.0f, -20.0f },
+			{ -10.0f, 20.0f },
+			{ 10.0f, 20.0f }
+		};
+
+		this->entities[0]->set_shape(points, sf::Color::White, true);
+	}
 
 	return STARTUP_SUCCESS;
 };

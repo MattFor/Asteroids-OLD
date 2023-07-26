@@ -12,12 +12,15 @@ class Player : public Entity
 public:
 	using Entity::Entity;
 
+	// Gameplay
 	int lives = 3;
 
-	Type spawn = Type::Unknown;
-
+	// - Spawn
 	bool spawned_inheritance = true;
 
+	Spawnable to_spawn = Spawnable::Unknown;
+
+	// Movement
 	void calc_move(float elapsed_time);
 
 private:

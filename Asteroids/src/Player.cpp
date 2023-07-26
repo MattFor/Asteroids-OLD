@@ -11,26 +11,24 @@ void Player::calc_move(float elapsed_time)
 {
 	if (input(SHOOT) && this->spawn_cooldown <= 0)
 	{
-		this->spawn = Type::Projectile;
+		this->spawn = Spawnable::Projectile;
 		this->spawn_cooldown = 35;
 	}
 
-	const float angle_radians = this->get_angle() * RADIANS;
-
-	const float dx_temp = std::sin(angle_radians) * 10000.0f * elapsed_time;
-	const float dy_temp = -std::cos(angle_radians) * 10000.0f * elapsed_time;
+	const float angle_radians = this->angle * RADIANS;
 
 	if (input(UP))
 	{
-		this->dx += dx_temp - this->dx;
-		this->dy += dy_temp - this->dy;
+		// We accumulate dx and dy over time for gradual movement
+		this->dx += std::sin(angle_radians) * 1000.0f * elapsed_time;
+		this->dy -= std::cos(angle_radians) * 1000.0f * elapsed_time;
 	}
 
 	if (input(LEFT))
 	{
 		this->rotation += 150.0f * elapsed_time;
 	}
-	
+
 	if (input(RIGHT))
 	{
 		this->rotation -= 150.0f * elapsed_time;
@@ -45,6 +43,7 @@ void Player::calc_move(float elapsed_time)
 	this->dx = std::clamp(this->dx, -MAX_SPEED, MAX_SPEED);
 	this->dy = std::clamp(this->dy, -MAX_SPEED, MAX_SPEED);
 
+	// apply a friction-like effect to gradually reduce velocity and rotation when no input
 	this->dx *= DECAY;
 	this->dy *= DECAY;
 	this->rotation *= DECAY;

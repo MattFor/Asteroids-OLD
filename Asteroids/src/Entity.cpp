@@ -5,7 +5,7 @@
 void Entity::calc_move(float elapsed_time)
 {
 	const float radians_per_degree = 3.14159f / 180.0f;
-	float angle_radians = this->get_angle() * radians_per_degree;
+	float angle_radians = this->angle * radians_per_degree;
 
 	this->x += this->dx * elapsed_time;
 	this->y += this->dy * elapsed_time;
@@ -19,22 +19,3 @@ void Entity::calc_move(float elapsed_time)
 		this->dy += (dy_temp - this->dy) * adjustment_factor;
 	}
 };
-
-Entity::Owner Entity::generate_ownership()
-{
-	switch (this->type)
-	{
-	case Type::Player:
-		return Owner::Player;
-
-	case Type::Enemy_Spaceship:
-		return Owner::Enemy_Spaceship;
-
-	case Type::Projectile:
-		// Projectiles should not be able to spawn projectiles.
-		return Owner::Unknown;
-
-	default:
-		return Owner::Unknown;
-	}
-}

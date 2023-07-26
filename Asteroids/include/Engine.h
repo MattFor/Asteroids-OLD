@@ -16,59 +16,70 @@
 #include "SFML/Graphics.hpp"
 
 #include "Window.h"
+#include "Object.h"
 #include "Entity.h"
+#include "Player.h"
 
 class Engine
 {
 private:
-	void draw_objects(sf::RenderWindow* window);
-	void draw_entities(sf::RenderWindow* window);
+	void draw_objects(sf::RenderWindow& window);
+	void draw_entities(sf::RenderWindow& window);
 
 public:
-	Engine(const int screen_width = 1024, const int screen_height = 1024)
+	Engine(int screen_width = 1024, int screen_height = 1024)
 	{
 		this->screen_width = screen_width;
 		this->screen_height = screen_height;
 	};
 	~Engine() {}; // Textures and entities already handled in their own deconstructor
 
+
+	// Miscellaneous
 	bool debug = true;
 
+	// Window
 	int screen_width = 1024;
 	int screen_height = 1024;
 
+	// Internals
 	int object_count = 0;
 	int entity_count = 0;
 
 	int asteroid_count = 0;
 	int enemy_spaceship_count = 0;
 
-	bool last_pressed_forward_flag = false;
-
 	sf::Clock* timer = new sf::Clock();
 
+	// Elements
 	std::vector<Object*> objects {};
 	std::vector<Entity*> entities {};
+
+	// Graphics
+	RenderMode render_mode = RENDER_MODE;
 
 	std::vector<sf::Texture*> textures {};
 
 	// Start up
-	int initialize(Window*);
+	int initialize(Window&);
 
 	std::string load_textures();
 
 	// Runtime
 	float get_elapsed_time();
 
-	int add_entity(Entity::Type, Entity::Owner);
+	int spawn(
+		Object::Spawnable,	// Type
+		Object::Spawnable	// Owner
+	);
 
 	// Entity logic
 	void execute_moves();
 	void calculate_moves();
 
 	// Graphics
-	void apply_textures(Window*);
-	void draw_all(sf::RenderWindow*);
+	void apply_textures();
+	void draw_all(sf::RenderWindow&);
 };
 
 #endif // !_ENGINE_H

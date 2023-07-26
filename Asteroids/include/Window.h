@@ -7,12 +7,14 @@
 
 #define RADIANS 3.14159f / 180.0f
 
-#define DECAY 0.999f
+#define DECAY 0.985f
 
 #define MAX_SPEED 10000.0f
 #define MAX_ROTATION 180.0f
 
 #include "SFML/Graphics.hpp"
+
+#define EXIT sf::Keyboard::Escape
 
 #define UP sf::Keyboard::W
 #define DOWN sf::Keyboard::S
@@ -20,22 +22,44 @@
 #define RIGHT sf::Keyboard::D
 #define SHOOT sf::Keyboard::E
 
+enum class RenderMode : int
+{
+	VECTOR,
+	TEXTURE
+};
+
+#define RENDER_MODE RenderMode::VECTOR
+
 class Window
 {
 public:
-	Window(int height = -1, int width = -1) {
-		this->height = height;
+	Window(const int width = -1, const int height = -1, bool fullscreen = false) {
 		this->width = width;
+		this->height = height;
 
 		if (height == -1)
 		{
-			this->height = 1024;
 			this->width = 1024;
-		};
+			this->height = 1024;
+		}
+		else if (fullscreen)
+		{
+			sf::VideoMode desktop = sf::VideoMode::getDesktopMode();
+			this->width = desktop.width;
+			this->height = desktop.height;
+		}
 
 		// Initialize the window
 		sf::RenderWindow* window = new sf::RenderWindow();
-		window->create(sf::VideoMode(height, width), "Asteroids");
+
+		if (fullscreen)
+		{
+			window->create(sf::VideoMode(height, width), "Asteroids", sf::Style::Fullscreen);
+		}
+		else
+		{
+			window->create(sf::VideoMode(height, width), "Asteroids");
+		}
 
 		// Make it so that y starts at 0 from the bottom of the screen
 		sf::View view = window->getDefaultView();
@@ -44,7 +68,6 @@ public:
 
 		this->hwnd = window;
 		this->hwnd->setVerticalSyncEnabled(true);
-		// this->hwnd->setFramerateLimit(144);
 	};
 	~Window()
 	{
