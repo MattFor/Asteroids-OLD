@@ -35,7 +35,7 @@ enum class RenderMode : int
 
 #define RENDER_MODE RenderMode::VECTORS
 
-#define FULLSCREEN false // Make the game fullscreen
+#define FULLSCREEN true // Make the game fullscreen
 #define OLD_SCHOOL true // Make it pixelated!
 
 #define WIDTH 0

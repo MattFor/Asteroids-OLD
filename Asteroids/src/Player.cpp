@@ -54,8 +54,15 @@ void Player::calc_move(float elapsed_time)
 	while (this->angle >= 360.0f) this->angle -= 360.0f;
 	while (this->angle < 0.0f) this->angle += 360.0f;
 
-	this->dx = std::clamp(this->dx, -MAX_SPEED, MAX_SPEED);
-	this->dy = std::clamp(this->dy, -MAX_SPEED, MAX_SPEED);
+	float _MAX_SPEED = MAX_SPEED;
+
+	if (OLD_SCHOOL)
+	{
+		_MAX_SPEED *= 0.3f;
+	}
+
+	this->dx = std::clamp(this->dx, -_MAX_SPEED, _MAX_SPEED);
+	this->dy = std::clamp(this->dy, -_MAX_SPEED, _MAX_SPEED);
 
 	// apply a friction-like effect to gradually reduce velocity and rotation when no input
 	this->dx *= DECAY;
