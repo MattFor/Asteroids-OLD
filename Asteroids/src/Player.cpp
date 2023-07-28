@@ -11,7 +11,7 @@ void Player::calc_move(float elapsed_time)
 {
 	if (input(SHOOT) && this->spawn_cooldown <= 0)
 	{
-		this->spawn = Spawnable::Projectile;
+		this->spawn = SpawnableType::Projectile;
 		this->spawn_cooldown = 35;
 	}
 
@@ -26,12 +26,26 @@ void Player::calc_move(float elapsed_time)
 
 	if (input(LEFT))
 	{
-		this->rotation += 150.0f * elapsed_time;
+		if (OLD_SCHOOL)
+		{
+			this->rotation += 175.0f * elapsed_time;
+		}
+		else
+		{
+			this->rotation -= 175.0f * elapsed_time;
+		}
 	}
 
 	if (input(RIGHT))
 	{
-		this->rotation -= 150.0f * elapsed_time;
+		if (OLD_SCHOOL)
+		{
+			this->rotation -= 175.0f * elapsed_time;
+		}
+		else
+		{
+			this->rotation += 175.0f * elapsed_time;
+		}
 	}
 
 	this->angle += this->rotation * elapsed_time;

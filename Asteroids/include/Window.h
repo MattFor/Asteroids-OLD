@@ -5,79 +5,97 @@
 
 #pragma once
 
-#define RADIANS 3.14159f / 180.0f
-
-#define DECAY 0.985f
-
-#define MAX_SPEED 10000.0f
-#define MAX_ROTATION 180.0f
-
 #include "SFML/Graphics.hpp"
 
-#define EXIT sf::Keyboard::Escape
-
-#define UP sf::Keyboard::W
-#define DOWN sf::Keyboard::S
-#define LEFT sf::Keyboard::A
-#define RIGHT sf::Keyboard::D
-#define SHOOT sf::Keyboard::E
-
-enum class RenderMode : int
-{
-	VECTOR,
-	TEXTURE
-};
-
-#define RENDER_MODE RenderMode::VECTOR
+#include "Settings.h"
 
 class Window
 {
 public:
-	Window(const int width = -1, const int height = -1, bool fullscreen = false) {
-		this->width = width;
-		this->height = height;
-
-		if (height == -1)
-		{
-			this->width = 1024;
-			this->height = 1024;
-		}
-		else if (fullscreen)
+	Window()
+	{
+		if (FULLSCREEN)
 		{
 			sf::VideoMode desktop = sf::VideoMode::getDesktopMode();
 			this->width = desktop.width;
 			this->height = desktop.height;
-		}
 
-		// Initialize the window
-		sf::RenderWindow* window = new sf::RenderWindow();
-
-		if (fullscreen)
-		{
-			window->create(sf::VideoMode(height, width), "Asteroids", sf::Style::Fullscreen);
+			if (DEBUG)
+			{
+				printf(("Fullscreen mode enabled, resolution: " + std::to_string(this->width) + "x" + std::to_string(this->height) + '\n').c_str());
+			}
 		}
 		else
 		{
-			window->create(sf::VideoMode(height, width), "Asteroids");
+			this->width = WIDTH;
+			this->height = HEIGHT;
 		}
 
-		// Make it so that y starts at 0 from the bottom of the screen
-		sf::View view = window->getDefaultView();
-		view.setSize((float)this->width, -(float)this->height);
-		window->setView(view);
+		if ((this->width <= 0 || this->height <= 0) && !FULLSCREEN)
+		{
+			this->width = 1024;
+			this->height = 1024;
 
-		this->hwnd = window;
+			if (DEBUG)
+			{
+				printf("Window - Using default engine display size 1024x1024.\n");
+			}
+		}
+
+		if (OLD_SCHOOL)
+		{
+			this->render_width = this->width / 8;
+			this->render_height = this->height / 8;
+
+			if (DEBUG)
+			{
+				printf(("Old school mode enabled, new render resolution: " + std::to_string(this->render_width) + "x" + std::to_string(this->render_height) + '\n').c_str());
+			}
+
+			this->render_buffer = new sf::RenderTexture();
+			if (!render_buffer->create(this->render_width, this->render_height))
+			{
+				printf("Critical error - could not create render texture!\n");
+			}
+		}
+		else
+		{
+			this->render_width = this->width;
+			this->render_height = this->height;
+		}
+
+		this->hwnd->create(
+			sf::VideoMode(this->width, this->height),
+			"Asteroids",
+			FULLSCREEN ? sf::Style::Fullscreen : sf::Style::Default
+		);
+
+		sf::View view = sf::View(
+			sf::FloatRect(
+				0.0f,
+				0.0f,
+				(float)this->render_width,
+				(float)this->render_height
+			)
+		);
+
+		this->hwnd->setView(view);
 		this->hwnd->setVerticalSyncEnabled(true);
 	};
 	~Window()
 	{
 		delete hwnd;
+		delete render_buffer;
 	};
 
 	unsigned int width = 0;
 	unsigned int height = 0;
 
-	sf::RenderWindow* hwnd = NULL;
+	unsigned int render_width = 0;
+	unsigned int render_height = 0;
+
+	sf::RenderWindow* hwnd = new sf::RenderWindow();
+	sf::RenderTexture* render_buffer = nullptr;
 
 	void clear();
 	void display();

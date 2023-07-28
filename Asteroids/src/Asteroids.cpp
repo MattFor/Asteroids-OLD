@@ -4,23 +4,30 @@
 
 #include "Asteroids.h"
 
-int Asteroids::initiate()
+int Asteroids::initialize()
 {
 	// Start the engine and load the textures.
 	if (!this->engine->initialize(*this->window))
 		return STARTUP_ERROR;
 
-	printf("Initialization successful.\n");
-	printf((
-		"Resolution: " + 
-		std::to_string(this->engine->screen_width) + 
-		"x" + 
-		std::to_string(this->engine->screen_height) + 
-		".\n"
-	).c_str());
+	if (DEBUG)
+	{
+		printf("Initialization successful.\n");
+		printf((
+			"Window Resolution: " +
+			std::to_string(this->window->width) +
+			"x" +
+			std::to_string(this->window->height) +
+			".\n" +
+			"Engine Resolution: " +
+			std::to_string(this->engine->render_width) +
+			"x" +
+			std::to_string(this->engine->render_height) +
+			".\n"
+			).c_str());
+	}
 
 	sf::Event event {};
-
 	while (this->window->hwnd->isOpen())
 	{
 		while (this->window->hwnd->pollEvent(event))
@@ -28,7 +35,7 @@ int Asteroids::initiate()
 			switch (event.type)
 			{
 			case sf::Event::Closed:
-				EXIT_GAME:
+			EXIT_GAME:
 				this->window->hwnd->close();
 				delete this->engine;
 				return EXIT_SUCCESS;
@@ -42,9 +49,9 @@ int Asteroids::initiate()
 
 		// Clear the window and apply the textures again,
 		// set their correct positions
-		this->window->clear();
+		this->engine->clear_screen(*this->window->hwnd, *this->window->render_buffer);
 
-		if ((bool)this->engine->render_mode)
+		if (RENDER_MODE == RenderMode::TEXTURES)
 		{
 			this->engine->apply_textures();
 		}
@@ -53,8 +60,7 @@ int Asteroids::initiate()
 		this->engine->execute_moves();
 
 		// Display everything
-		this->engine->draw_all(*this->window->hwnd);
-		this->window->display();
+		this->engine->draw_all(*this->window->hwnd, *this->window->render_buffer);
 	}
 
 	return EXIT_SUCCESS;

@@ -2,29 +2,29 @@
 
 #include "Object.h"
 
-void Object::move(RenderMode& render_mode)
+void Object::move()
 {
-	switch (render_mode)
+	switch (RENDER_MODE)
 	{
-	case RenderMode::TEXTURE:
-		this->sprite->setPosition(this->x, this->y);
-		break;
-	default:
+	case RenderMode::VECTORS:
 		this->shape->setPosition(this->x, this->y);
+		break;
+	case RenderMode::TEXTURES:
+		this->sprite->setPosition(this->x, this->y);
 		break;
 	}
 };
 
-void Object::rotate(RenderMode& render_mode)
+void Object::rotate()
 {
-	switch (render_mode)
+	switch (RENDER_MODE)
 	{
-	case RenderMode::TEXTURE:
-		this->sprite->setRotation(this->angle);
-	break;
-	default:
+	case RenderMode::VECTORS:
 		this->shape->setRotation(this->angle);
-	break;
+		break;
+	case RenderMode::TEXTURES:
+		this->sprite->setRotation(this->angle);
+		break;
 	}
 };
 
@@ -59,7 +59,7 @@ void Object::set_shape(std::vector<sf::Vector2f> points, sf::Color colour, bool 
 	if (wireframe)
 	{
 		shape->setOutlineColor(colour);
-		shape->setOutlineThickness(1.5f);
+		shape->setOutlineThickness(1.0f);
 		shape->setFillColor(sf::Color::Transparent);
 	}
 	else

@@ -5,12 +5,6 @@
 
 #pragma once
 
-#define STARTUP_ERROR 0
-#define STARTUP_SUCCESS 1
-
-#define LOADING_TEXTURE_FAILURE 0
-#define LOADING_TEXTURE_SUCCESS 1
-
 #include <vector>
 
 #include "SFML/Graphics.hpp"
@@ -19,30 +13,39 @@
 #include "Object.h"
 #include "Entity.h"
 #include "Player.h"
+#include "Projectile.h"
 
 class Engine
 {
 private:
-	void draw_objects(sf::RenderWindow& window);
-	void draw_entities(sf::RenderWindow& window);
+	void draw_objects(sf::RenderWindow&, sf::RenderTexture&);
+	void draw_entities(sf::RenderWindow&, sf::RenderTexture&);
 
 public:
-	Engine(int screen_width = 1024, int screen_height = 1024)
+	Engine(unsigned int render_width = 0, unsigned int render_height = 0)
 	{
-		this->screen_width = screen_width;
-		this->screen_height = screen_height;
+		if (render_width <= 0 || render_height <= 0)
+		{
+			this->render_width = 1024;
+			this->render_height = 1024;
+
+			if (DEBUG)
+			{
+				printf("Window - Using default engine display size 1024x1024.\n");
+			}
+		}
+		else
+		{
+			this->render_width = render_width;
+			this->render_height = render_height;
+		}
 	};
 	~Engine() {}; // Textures and entities already handled in their own deconstructor
 
-
-	// Miscellaneous
-	bool debug = true;
-
-	// Window
-	int screen_width = 1024;
-	int screen_height = 1024;
-
 	// Internals
+	unsigned int render_width = 0;
+	unsigned int render_height = 0;
+
 	int object_count = 0;
 	int entity_count = 0;
 
@@ -56,8 +59,6 @@ public:
 	std::vector<Entity*> entities {};
 
 	// Graphics
-	RenderMode render_mode = RENDER_MODE;
-
 	std::vector<sf::Texture*> textures {};
 
 	// Start up
@@ -69,8 +70,8 @@ public:
 	float get_elapsed_time();
 
 	int spawn(
-		Object::Spawnable,	// Type
-		Object::Spawnable	// Owner
+		Object::SpawnableType,	// Type
+		Object::SpawnableType	// Owner
 	);
 
 	// Entity logic
@@ -79,7 +80,8 @@ public:
 
 	// Graphics
 	void apply_textures();
-	void draw_all(sf::RenderWindow&);
+	void draw_all(sf::RenderWindow&, sf::RenderTexture&);
+	void clear_screen(sf::RenderWindow&, sf::RenderTexture&);
 };
 
 #endif // !_ENGINE_H

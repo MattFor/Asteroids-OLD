@@ -157,6 +157,7 @@
     <ClCompile Include="src\Entity.cpp" />
     <ClCompile Include="src\Object.cpp" />
     <ClCompile Include="src\Player.cpp" />
+    <ClCompile Include="src\Projectile.cpp" />
     <ClCompile Include="src\Source.cpp" />
     <ClCompile Include="src\Window.cpp" />
   </ItemGroup>
@@ -166,6 +167,8 @@
     <ClInclude Include="include\Entity.h" />
     <ClInclude Include="include\Object.h" />
     <ClInclude Include="include\Player.h" />
+    <ClInclude Include="include\Projectile.h" />
+    <ClInclude Include="include\Settings.h" />
     <ClInclude Include="include\Window.h" />
   </ItemGroup>
   <ItemGroup>

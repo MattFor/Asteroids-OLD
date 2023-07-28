@@ -18,7 +18,7 @@ public:
 	// - Spawn
 	bool spawned_inheritance = true;
 
-	Spawnable to_spawn = Spawnable::Unknown;
+	SpawnableType to_spawn = SpawnableType::Unknown;
 
 	// Movement
 	void calc_move(float elapsed_time);

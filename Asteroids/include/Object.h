@@ -17,7 +17,7 @@ public:
 		Unknown
 	};
 
-	enum class Spawnable : int
+	enum class SpawnableType : int
 	{
 		Player,
 		Projectile,
@@ -32,7 +32,7 @@ public:
 		shape->setOrigin(0.0f, 0.0f);
 		shape->setPosition(sf::Vector2f(x, y));
 	};
-	~Object()
+	virtual ~Object()
 	{
 		delete shape;
 		delete sprite;
@@ -53,12 +53,12 @@ public:
 	float velocity = 0.0f;
 
 	// Graphics
-	// - VECTOR Mode
+	// - VECTORS Mode
 	sf::ConvexShape* shape = new sf::ConvexShape();
 
 	virtual void set_shape(std::vector<sf::Vector2f>, sf::Color = sf::Color::White, bool wireframe = true);
 
-	// - TEXTURE Mode
+	// - TEXTURES Mode
 	sf::Sprite* sprite = new sf::Sprite();
 	sf::Texture* texture = new sf::Texture();
 
@@ -67,8 +67,8 @@ public:
 	virtual void set_texture(sf::Texture&);
 
 	// Movement
-	void move(RenderMode&);
-	void rotate(RenderMode&);
+	void move();
+	void rotate();
 
 protected:
 	int _id = 0;

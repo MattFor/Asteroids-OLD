@@ -1,12 +1,10 @@
 #define STRICT
 
-#include <stdio.h>
-
 #include "Asteroids.h"
 
 int main() {
-	Asteroids* asteroids = new Asteroids(1440, 2560, true);
-	asteroids->initiate();
+	Asteroids* asteroids = new Asteroids();
+	asteroids->initialize();
 
 	delete asteroids;
 

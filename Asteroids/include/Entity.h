@@ -15,8 +15,8 @@ public:
 	explicit Entity(
 		const int _id,
 		const int id,
-		Spawnable type = Spawnable::Unknown,
-		Spawnable owner = Spawnable::Unknown
+		SpawnableType type = SpawnableType::Unknown,
+		SpawnableType owner = SpawnableType::Unknown
 	)
 	{
 		this->_id = _id;
@@ -26,7 +26,7 @@ public:
 		this->type = type;
 		this->owner = owner;
 	};
-	~Entity() {};
+	virtual ~Entity() {};
 
 	int id = 0;
 
@@ -35,9 +35,9 @@ public:
 
 	bool spawned_inheritance = false;
 
-	Spawnable type = Spawnable::Unknown;
-	Spawnable owner = Spawnable::Unknown;
-	Spawnable spawn = Spawnable::Unknown;
+	SpawnableType type = SpawnableType::Unknown;
+	SpawnableType owner = SpawnableType::Unknown;
+	SpawnableType spawn = SpawnableType::Unknown;
 
 	// Movement
 	virtual void calc_move(float elapsed_time);
