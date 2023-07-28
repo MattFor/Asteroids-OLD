@@ -35,30 +35,12 @@ enum class RenderMode : int
 
 #define RENDER_MODE RenderMode::VECTORS
 
-#define FULLSCREEN true // Make the game fullscreen
+#define FULLSCREEN false // Make the game fullscreen
 #define OLD_SCHOOL true // Make it pixelated!
+#define OLD_SCHOOL_FACTOR 4 // How much to divide the original resolution by
 
 #define WIDTH 0
 #define HEIGHT 0
 
-//struct Settings
-//{
-//	static unsigned int WIDTH;
-//	static unsigned int HEIGHT;
-//
-//	static void initiate() {
-//		if (FULLSCREEN) {
-//			sf::VideoMode desktop = sf::VideoMode::getDesktopMode();
-//			WIDTH = desktop.width;
-//			HEIGHT = desktop.height;
-//		}
-//
-//		if (WIDTH <= 0 || HEIGHT <= 0)
-//		{
-//			WIDTH = 1024;
-//			HEIGHT = 1024;
-//
-//			printf("Using default engine display size 1024x1024.\n");
-//		}
-//	}
-//};
+// Gameplay
+#define SLIDE_ROTATION false

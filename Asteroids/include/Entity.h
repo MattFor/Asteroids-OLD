@@ -33,7 +33,7 @@ public:
 	// Gameplay
 	int spawn_cooldown = 0;
 
-	bool spawned_inheritance = false;
+	bool spawn_inheritance = false;
 
 	SpawnableType type = SpawnableType::Unknown;
 	SpawnableType owner = SpawnableType::Unknown;

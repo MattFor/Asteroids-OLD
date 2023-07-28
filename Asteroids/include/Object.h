@@ -27,17 +27,20 @@ public:
 		Unknown
 	};
 
-	Object()
-	{
-		shape->setOrigin(0.0f, 0.0f);
-		shape->setPosition(sf::Vector2f(x, y));
+	struct Owner {
+		SpawnableType type;
+		int id;
 	};
+
+	Object() {};
 	virtual ~Object()
 	{
 		delete shape;
 		delete sprite;
 		delete texture;
 	};
+
+	Owner owner;
 
 	// Physics
 	float size = 0.0f;
@@ -54,13 +57,14 @@ public:
 
 	// Graphics
 	// - VECTORS Mode
-	sf::ConvexShape* shape = new sf::ConvexShape();
+	sf::Shape* shape = nullptr;
 
+	virtual void set_shape(const float = 1.0f, sf::Color = sf::Color::Yellow);
 	virtual void set_shape(std::vector<sf::Vector2f>, sf::Color = sf::Color::White, bool wireframe = true);
 
 	// - TEXTURES Mode
-	sf::Sprite* sprite = new sf::Sprite();
-	sf::Texture* texture = new sf::Texture();
+	sf::Sprite* sprite = nullptr;
+	sf::Texture* texture = nullptr;
 
 	bool loaded = false;
 

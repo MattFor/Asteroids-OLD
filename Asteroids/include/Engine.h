@@ -74,6 +74,8 @@ public:
 		Object::SpawnableType	// Owner
 	);
 
+	void despawn(Object&);
+
 	// Entity logic
 	void execute_moves();
 	void calculate_moves();

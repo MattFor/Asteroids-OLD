@@ -26,33 +26,31 @@ void Player::calc_move(float elapsed_time)
 
 	if (input(LEFT))
 	{
+		const float _rotation = (SLIDE_ROTATION ? 175.0f * elapsed_time * elapsed_time : 4.0f);
+
 		if (OLD_SCHOOL)
 		{
-			this->rotation += 175.0f * elapsed_time;
+			this->rotation += _rotation;
 		}
 		else
 		{
-			this->rotation -= 175.0f * elapsed_time;
+			this->rotation -= _rotation;
 		}
 	}
 
 	if (input(RIGHT))
 	{
+		const float _rotation = (SLIDE_ROTATION ? 175.0f * elapsed_time * elapsed_time : 4.0f);
+
 		if (OLD_SCHOOL)
 		{
-			this->rotation -= 175.0f * elapsed_time;
+			this->rotation -= _rotation;
 		}
 		else
 		{
-			this->rotation += 175.0f * elapsed_time;
+			this->rotation += _rotation;
 		}
 	}
-
-	this->angle += this->rotation * elapsed_time;
-
-	// normalize the angle to [0, 360)
-	while (this->angle >= 360.0f) this->angle -= 360.0f;
-	while (this->angle < 0.0f) this->angle += 360.0f;
 
 	float _MAX_SPEED = MAX_SPEED;
 
@@ -67,7 +65,21 @@ void Player::calc_move(float elapsed_time)
 	// apply a friction-like effect to gradually reduce velocity and rotation when no input
 	this->dx *= DECAY;
 	this->dy *= DECAY;
-	this->rotation *= DECAY;
+
+	this->angle += this->rotation;
+
+	if (SLIDE_ROTATION)
+	{
+		this->rotation *= DECAY;
+	}
+	else
+	{
+		this->rotation = 0.0f;
+	}
+
+	// normalize the angle to [0, 360)
+	while (this->angle >= 360.0f) this->angle -= 360.0f;
+	while (this->angle < 0.0f) this->angle += 360.0f;
 
 	this->x += this->dx * elapsed_time;
 	this->y += this->dy * elapsed_time;

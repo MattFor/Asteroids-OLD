@@ -44,8 +44,8 @@ public:
 
 		if (OLD_SCHOOL)
 		{
-			this->render_width = this->width / 8;
-			this->render_height = this->height / 8;
+			this->render_width = this->width / OLD_SCHOOL_FACTOR;
+			this->render_height = this->height / OLD_SCHOOL_FACTOR;
 
 			if (DEBUG)
 			{

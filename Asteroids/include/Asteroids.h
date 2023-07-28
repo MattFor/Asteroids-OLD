@@ -19,8 +19,8 @@ public:
 	};
 	~Asteroids() {};
 
-	Window* window = NULL;
-	Engine* engine = NULL;
+	Window* window = nullptr;
+	Engine* engine = nullptr;
 
 	int initialize();
 };

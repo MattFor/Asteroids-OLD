@@ -16,7 +16,7 @@ public:
 	int lives = 3;
 
 	// - Spawn
-	bool spawned_inheritance = true;
+	bool spawn_inheritance = true;
 
 	SpawnableType to_spawn = SpawnableType::Unknown;
 
