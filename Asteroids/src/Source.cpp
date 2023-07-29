@@ -2,7 +2,8 @@
 
 #include "Asteroids.h"
 
-int main() {
+int main()
+{
 	Asteroids* asteroids = new Asteroids();
 	asteroids->initialize();
 

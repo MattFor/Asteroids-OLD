@@ -12,18 +12,17 @@ float Engine::get_elapsed_time()
 	return this->timer->restart().asSeconds();
 };
 
-int Engine::spawn(Object::SpawnableType to_spawn, Object::SpawnableType spawner)
+int Engine::spawn(Element::Spawnable to_spawn, Element::Owner owner)
 {
 	switch (to_spawn)
 	{
-	case Object::SpawnableType::Player:
+	case Element::Spawnable::Player:
 	{
 		Player* player = new Player(
-			++this->object_count,
 			++this->entity_count,
 			to_spawn,
 			// Using spawnable here to save creating a Spawner enum
-			Object::SpawnableType::Engine
+			Element::Owner{ Element::Spawner::Engine, nullptr }
 		);
 
 		// Set coordinates in the middle of the playable area
@@ -38,7 +37,7 @@ int Engine::spawn(Object::SpawnableType to_spawn, Object::SpawnableType spawner)
 
 		if (DEBUG)
 		{
-			printf(("Player spawn coordinates: X[" + std::to_string(player->x) + "] Y[" + std::to_string(player->y) + "]\n").c_str());
+			printf("Player spawn coordinates: X[%.2f] Y[%.2f]\n", player->x, player->y);
 		}
 
 		if (RENDER_MODE == RenderMode::VECTORS)
@@ -55,179 +54,148 @@ int Engine::spawn(Object::SpawnableType to_spawn, Object::SpawnableType spawner)
 		}
 
 		this->entities.push_back(player);
-
-		if (DEBUG)
-		{
-			printf(("Added Entity #" + std::to_string(this->entity_count) + "\n").c_str());
-		}
 	}
 	break;
 
-	case Object::SpawnableType::Projectile:
+	case Element::Spawnable::Projectile:
 	{
-		Projectile* projectile = new Projectile(++this->object_count, ++this->entity_count, to_spawn, spawner);
+		Entity* projectile = new Entity(++this->entity_count, to_spawn, owner);
 
 		if (RENDER_MODE == RenderMode::VECTORS)
 		{
 			const float scale = (float)render_height / 1024.0f;
-			projectile->set_shape(3.0f, sf::Color::Yellow);
+			projectile->set_shape(3.0f * scale, sf::Color::Yellow);
 		}
 
 		this->entities.push_back(projectile);
-
-		if (DEBUG)
-		{
-			printf(("Added Entity #" + std::to_string(this->entity_count) + " Type: " + std::to_string((int)to_spawn) + "\n").c_str());
-		}
 	}
 	break;
 
 	default:
 	{
-		Entity* entity = new Entity(++this->object_count, ++this->entity_count, to_spawn, spawner);
+		Entity* entity = new Entity(++this->entity_count, to_spawn, owner);
 		this->entities.push_back(entity);
 	}
 	}
 
-	//if (this->debug)
-	//{
-	//	printf(("Added Object #" + std::to_string(this->object_count) + "\n").c_str());
-	//}
+	if (DEBUG)
+	{
+		printf("Added Entity #%d %s from %s\n", this->entity_count, element_names[(int)to_spawn].c_str(), element_names[(int)owner.type].c_str());
+	}
 
 	return (int)this->entities.size() - 1;
 };
 
-void Engine::despawn(Object& object)
+void Engine::despawn(Element& element)
 {
-	std::string object_name = "";
-
-	if (Entity* entity = dynamic_cast<Entity*>(&object))
+	if (Entity* entity = dynamic_cast<Entity*>(&element))
 	{
-		switch (entity->type)
-		{
-		case Object::SpawnableType::Player:
-			object_name = "Player";
-			break;
-		case Object::SpawnableType::Projectile:
-			object_name = "Projectile";
-			break;
-		case Object::SpawnableType::Asteroid:
-			object_name = "Asteroid";
-			break;
-		case Object::SpawnableType::Enemy_Spaceship:
-			object_name = "Enemy_Spaceship";
-			break;
-		case Object::SpawnableType::Engine:
-			object_name = "Engine";
-			break;
-		default:
-			object_name = "Unknown";
-		}
-
 		// Log the despawn action.
-		printf(("Despawning Entity " + object_name + " ID #" + std::to_string(entity->id) + '\n').c_str());
+		printf(("Despawning Entity " + element_names[(int)entity->type] + " ID #" + std::to_string(entity->id) + '\n').c_str());
 	}
 
-	entities.erase(std::remove(entities.begin(), entities.end(), &object), entities.end());
+	entities.erase(std::remove(entities.begin(), entities.end(), &element), entities.end());
 }
 
 // Entity Logic
 void Engine::calculate_moves()
 {
-	const float elapsed_time = this->get_elapsed_time();
+	const float elapsed_time = get_elapsed_time();
 
-	std::vector<int> marked_for_deletion {};
-	std::vector<std::tuple<Object::SpawnableType, Object::SpawnableType, Entity*>> spawns {};
+	std::vector<Entity*> marked_for_deletion {};
+	std::vector<std::tuple<Element::Spawnable, Element::Owner>> spawns {};
 
-	for (auto it = this->entities.begin(); it != this->entities.end();)
+	for (auto it = entities.begin(); it != entities.end();)
 	{
 		Entity* entity = *it;
 
 		entity->calc_move(elapsed_time);
 
 		const bool OUT_OF_BOUNDS = entity->x > render_width || entity->x < 0 || entity->y > render_height || entity->y < 0;
-
-		if (OUT_OF_BOUNDS && entity->type == Object::SpawnableType::Projectile)
+		if (OUT_OF_BOUNDS && entity->type == Element::Spawnable::Projectile)
 		{
-			marked_for_deletion.push_back(entity->id);
+			marked_for_deletion.push_back(entity);
 		}
 
 		entity->x = (entity->x > render_width) ? 0 : (entity->x < 0) ? render_width : entity->x;
 		entity->y = (entity->y > render_height) ? 0 : (entity->y < 0) ? render_height : entity->y;
+		entity->spawn_cooldown = std::max(entity->spawn_cooldown - 1, 0);
 
-		entity->spawn_cooldown = (entity->spawn_cooldown <= 0) ? 0 : --entity->spawn_cooldown;
-
-		if (entity->spawn != Object::SpawnableType::Unknown)
+		if (entity->spawn != Element::Spawnable::Unknown)
 		{
-			spawns.push_back({ entity->spawn, entity->type, entity });
-			entity->spawn = Object::SpawnableType::Unknown;
+			spawns.push_back({ entity->spawn, Element::Owner{ (Element::Spawner)entity->type, entity } });
 		}
 
-		//if (Projectile* projectile = dynamic_cast<Projectile*>(entity))
-		//{
-		//	projectile->lifetime--;
-
-		//	if (projectile->lifetime <= 0)
-		//	{
-		//		delete entity;
-		//		it = this->entities.erase(it);
-		//		continue;
-		//	}
-		//}
-
-		if (DEBUG_PLAYER_INFO && entity->type == Object::SpawnableType::Player)
+		if (DEBUG_PLAYER_INFO && entity->type == Element::Spawnable::Player)
 		{
-			printf((
-				"X: " + std::to_string(entity->x) +
-				" Y: " + std::to_string(entity->y) +
-				" vDx: " + std::to_string(entity->dx) +
-				" vDy: " + std::to_string(entity->dy) +
-				" Vel: " + std::to_string(entity->velocity) +
-				" R: " + std::to_string(entity->angle) +
-				'\n').c_str());
+			printf("X[%.3f] Y[%.3f] A[%.3f] DX[%.3f] DY[%.3f] R[%.3f]\n", entity->x, entity->y, entity->angle, entity->dx, entity->dy, entity->rotation);
 		}
 
 		++it;
 	}
 
-	for (auto& [to_spawn, owner, entity] : spawns) {
-		const int index = this->spawn(to_spawn, owner);
+	// Spawn entities to prevent modifying entities while going through a vector
+	for (auto& [to_spawn, owner] : spawns)
+	{
+		const int index = spawn(to_spawn, owner);
 
-		if (entity->spawn_inheritance)
+		Entity* entity = dynamic_cast<Entity*>(owner.element);
+		if (entity->spawned_inheritance)
 		{
-			this->entities[index]->x = entity->x;
-			this->entities[index]->y = entity->y;
-			this->entities[index]->angle = entity->angle;
+			sf::FloatRect entity_bounds {};
+			if (entity->shape != nullptr)
+			{
+				entity_bounds = entity->shape->getLocalBounds();
+			}
+			else if (entity->sprite != nullptr)
+			{
+				entity_bounds = entity->sprite->getLocalBounds();
+			}
+
+			const float y_offset = entity_bounds.height / 2.0f;
+
+			sf::FloatRect spawned_entity_bounds {};
+			if (entities[index]->shape != nullptr)
+			{
+				spawned_entity_bounds = entities[index]->shape->getLocalBounds();
+			}
+			else if (entities[index]->sprite != nullptr)
+			{
+				spawned_entity_bounds = entities[index]->sprite->getLocalBounds();
+			}
+
+			const float x_offset = spawned_entity_bounds.width / 2.0f;
+
+			const float angle_radians = entity->angle * RADIANS;
+			const float x_offset_rotated = y_offset * std::sin(angle_radians) - x_offset;
+			const float y_offset_rotated = y_offset * -std::cos(angle_radians);
+
+			entities[index]->dx = entity->dx;
+			entities[index]->dy = entity->dy;
+			entities[index]->x = entity->x + x_offset_rotated;
+			entities[index]->y = entity->y + y_offset_rotated;
+			entities[index]->angle = entity->angle;
 		}
 
-		switch (to_spawn)
-		{
-		case Object::SpawnableType::Projectile:
-		{
-			Projectile* projectile = dynamic_cast<Projectile*>(this->entities[index]);
-
-			projectile->lifetime = 60 * 60 * 1000;
-			projectile->set_shape();
-		}
-		break;
-		}
+		entity->spawn = Element::Spawnable::Unknown;
 	}
 
-	for (int index : marked_for_deletion)
+	// Deleting them here to prevent the same thing as well
+	for (Entity* entity : marked_for_deletion)
 	{
-		despawn(*this->entities[index]);
+		despawn(*entity);
 	}
 
 	// Adjust the IDs
-	for (int i = 0; i < this->entities.size(); ++i)
+	for (int i = 0; i < entities.size(); ++i)
 	{
-		this->entities[i]->id = i;
+		entities[i]->id = i;
 	}
 };
 
 void Engine::execute_moves()
 {
-	for (Entity* entity : this->entities)
+	for (Entity* entity : entities)
 	{
 		entity->move();
 		entity->rotate();
@@ -247,18 +215,16 @@ void Engine::clear_screen(sf::RenderWindow& window, sf::RenderTexture& buffer)
 
 void Engine::apply_textures()
 {
-	for (Entity* entity : this->entities) {
-		if (entity->loaded)
-			continue;
-
-		entity->set_texture(*this->textures[(int)entity->type]);
+	for (Entity* entity : entities)
+	{
+		entity->set_texture(*textures[(int)entity->type]);
 	}
 };
 
 void Engine::draw_all(sf::RenderWindow& window, sf::RenderTexture& buffer)
 {
-	this->draw_objects(window, buffer);
-	this->draw_entities(window, buffer);
+	draw_objects(window, buffer);
+	draw_entities(window, buffer);
 
 	// Apply filter
 	if (OLD_SCHOOL)
@@ -276,27 +242,25 @@ void Engine::draw_entities(sf::RenderWindow& window, sf::RenderTexture& buffer)
 	switch (RENDER_MODE)
 	{
 	case RenderMode::VECTORS:
-		for (Entity* entity : this->entities)
+		if (OLD_SCHOOL)
 		{
-			if (entity->shape == nullptr)
-				continue;
-
-			if (OLD_SCHOOL)
+			for (Entity* entity : entities)
 			{
 				buffer.draw(*entity->shape);
-				break;
 			}
-
-			window.draw(*entity->shape);
+		}
+		else
+		{
+			for (Entity* entity : entities)
+			{
+				window.draw(*entity->shape);
+			}
 		}
 		break;
 
 	case RenderMode::TEXTURES:
-		for (Entity* entity : this->entities)
+		for (Entity* entity : entities)
 		{
-			if (entity->sprite == nullptr)
-				continue;
-
 			window.draw(*entity->sprite);
 		}
 		break;
@@ -308,27 +272,25 @@ void Engine::draw_objects(sf::RenderWindow& window, sf::RenderTexture& buffer)
 	switch (RENDER_MODE)
 	{
 	case RenderMode::VECTORS:
-		for (Object* object : this->objects)
+		if (OLD_SCHOOL)
 		{
-			if (object->shape == nullptr)
-				continue;
-
-			if (OLD_SCHOOL)
+			for (Element* object : objects)
 			{
 				buffer.draw(*object->shape);
-				break;
 			}
-
-			window.draw(*object->shape);
+		}
+		else
+		{
+			for (Element* object : objects)
+			{
+				window.draw(*object->shape);
+			}
 		}
 		break;
 
 	case RenderMode::TEXTURES:
-		for (Object* object : this->objects)
+		for (Element* object : objects)
 		{
-			if (object->sprite == nullptr)
-				continue;
-
 			window.draw(*object->sprite);
 		}
 		break;
@@ -338,6 +300,12 @@ void Engine::draw_objects(sf::RenderWindow& window, sf::RenderTexture& buffer)
 // Start up
 int Engine::initialize(Window& window)
 {
+	if (OLD_SCHOOL && RENDER_MODE != RenderMode::VECTORS)
+	{
+		printf("Cannot play in old school mode without being in the VECTOR graphics mode.\n");
+		return STARTUP_ERROR;
+	}
+
 	switch (RENDER_MODE)
 	{
 	case RenderMode::VECTORS:
@@ -353,7 +321,7 @@ int Engine::initialize(Window& window)
 			printf("Initializing in TEXTURE GRAPHICS mode.\n");
 		}
 
-		std::string error = this->load_textures();
+		std::string error = load_textures();
 
 		if (error != "")
 		{
@@ -364,8 +332,7 @@ int Engine::initialize(Window& window)
 	}
 
 	// Add player entity
-	this->spawn(Object::SpawnableType::Player, Object::SpawnableType::Engine);
-	this->entities[0]->spawn_inheritance = true;
+	spawn(Element::Spawnable::Player, Element::Owner{ Element::Spawner::Engine, nullptr });
 
 	return STARTUP_SUCCESS;
 };
@@ -392,11 +359,11 @@ std::string Engine::load_textures()
 			return "Error loading " + texture_name[i] + ": " + texture_filenames[i] + ".png in /textures/\n";
 		}
 
-		this->textures.push_back(texture);
+		textures.push_back(texture);
 
 		if (DEBUG)
 		{
-			printf(("[TEXTURES LOADED] - " + texture_name[i] + " - ./textures/" + texture_filenames[i] + '\n').c_str());
+			printf("[TEXTURES LOADED] - %s - ./textures/%s\n", texture_name[i].c_str(), texture_filenames[i].c_str());
 		}
 	}
 

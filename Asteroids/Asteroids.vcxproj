@@ -153,28 +153,28 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="src\Asteroids.cpp" />
+    <ClCompile Include="src\Element.cpp" />
     <ClCompile Include="src\Engine.cpp" />
     <ClCompile Include="src\Entity.cpp" />
-    <ClCompile Include="src\Object.cpp" />
     <ClCompile Include="src\Player.cpp" />
-    <ClCompile Include="src\Projectile.cpp" />
     <ClCompile Include="src\Source.cpp" />
     <ClCompile Include="src\Window.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\Asteroids.h" />
+    <ClInclude Include="include\Element.h" />
     <ClInclude Include="include\Engine.h" />
     <ClInclude Include="include\Entity.h" />
-    <ClInclude Include="include\Object.h" />
     <ClInclude Include="include\Player.h" />
-    <ClInclude Include="include\Projectile.h" />
     <ClInclude Include="include\Settings.h" />
     <ClInclude Include="include\Window.h" />
   </ItemGroup>
   <ItemGroup>
-    <Image Include="textures\as_vec_player.png" />
-    <Image Include="textures\as_vec_projectile.png" />
-    <Image Include="textures\test.jpg" />
+    <Image Include="resources\textures\as_vec_player.png" />
+    <Image Include="resources\textures\as_vec_projectile.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="resources\shaders\old_school.frag" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

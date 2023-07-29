@@ -2,16 +2,37 @@
 
 #include "Entity.h"
 
+void Entity::move()
+{
+	if (this->shape != nullptr)
+	{
+		this->shape->setPosition(this->x, this->y);
+		return;
+	}
+
+	this->sprite->setPosition(this->x, this->y);
+};
+
+void Entity::rotate()
+{
+	if (this->shape != nullptr)
+	{
+		this->shape->setRotation(this->angle);
+		return;
+	}
+
+	this->sprite->setRotation(this->angle);
+};
+
 void Entity::calc_move(float elapsed_time)
 {
-	const float radians_per_degree = 3.14159f / 180.0f;
-	float angle_radians = this->angle * radians_per_degree;
+	const float angle_radians = this->angle * RADIANS;
 
 	// Calculate the directional velocities.
-	this->dx = std::sin(angle_radians) * 1000.0f;
-	this->dy = -std::cos(angle_radians) * 1000.0f;
+	const float carried_dx = this->dx + std::sin(angle_radians) * 1000.0f;
+	const float carried_dy = this->dy + -std::cos(angle_radians) * 1000.0f;
 
 	// Update position based on directional velocities and elapsed time.
-	this->x += this->dx * elapsed_time;
-	this->y += this->dy * elapsed_time;
+	this->x += carried_dx * elapsed_time;
+	this->y += carried_dy * elapsed_time;
 };

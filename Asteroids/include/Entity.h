@@ -7,39 +7,31 @@
 
 #include "SFML/Graphics.hpp"
 
-#include "Object.h"
+#include "Element.h"
 
-class Entity : public Object
+class Entity : public Element
 {
 public:
-	explicit Entity(
-		const int _id,
-		const int id,
-		SpawnableType type = SpawnableType::Unknown,
-		SpawnableType owner = SpawnableType::Unknown
-	)
-	{
-		this->_id = _id;
-		this->_type = Object::ElementType::Dynamic;
-
-		this->id = id;
-		this->type = type;
-		this->owner = owner;
-	};
+	using Element::Element;
 	virtual ~Entity() {};
 
-	int id = 0;
+	// Movement
+	float dx = 0.0f;
+	float dy = 0.0f;
+
+	float rotation = 0.0f;
 
 	// Gameplay
 	int spawn_cooldown = 0;
 
-	bool spawn_inheritance = false;
+	bool spawned_inheritance = true;
 
-	SpawnableType type = SpawnableType::Unknown;
-	SpawnableType owner = SpawnableType::Unknown;
-	SpawnableType spawn = SpawnableType::Unknown;
+	Spawnable spawn = Spawnable::Unknown;
 
 	// Movement
+	void move();
+	void rotate();
+
 	virtual void calc_move(float elapsed_time);
 };
 

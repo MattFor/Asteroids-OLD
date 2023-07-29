@@ -15,10 +15,7 @@ public:
 	// Gameplay
 	int lives = 3;
 
-	// - Spawn
-	bool spawn_inheritance = true;
-
-	SpawnableType to_spawn = SpawnableType::Unknown;
+	Element::Spawnable to_spawn = Element::Spawnable::Unknown;
 
 	// Movement
 	void calc_move(float elapsed_time);

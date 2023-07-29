@@ -7,7 +7,7 @@
 
 #include "SFML/Graphics.hpp"
 
-#include "Settings.h"
+#include "Element.h"
 
 class Window
 {
@@ -55,7 +55,7 @@ public:
 			this->render_buffer = new sf::RenderTexture();
 			if (!render_buffer->create(this->render_width, this->render_height))
 			{
-				printf("Critical error - could not create render texture!\n");
+				printf("Critical error - could not spawn render texture!\n");
 			}
 		}
 		else

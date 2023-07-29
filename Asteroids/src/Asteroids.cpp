@@ -47,8 +47,6 @@ int Asteroids::initialize()
 			goto EXIT_GAME;
 		}
 
-		// Clear the window and apply the textures again,
-		// set their correct positions
 		this->engine->clear_screen(*this->window->hwnd, *this->window->render_buffer);
 
 		if (RENDER_MODE == RenderMode::TEXTURES)
@@ -59,7 +57,6 @@ int Asteroids::initialize()
 		this->engine->calculate_moves();
 		this->engine->execute_moves();
 
-		// Display everything
 		this->engine->draw_all(*this->window->hwnd, *this->window->render_buffer);
 	}
 

@@ -10,16 +10,25 @@
 #include "SFML/Graphics.hpp"
 
 #include "Window.h"
-#include "Object.h"
+#include "Element.h"
 #include "Entity.h"
 #include "Player.h"
-#include "Projectile.h"
 
 class Engine
 {
 private:
-	void draw_objects(sf::RenderWindow&, sf::RenderTexture&);
-	void draw_entities(sf::RenderWindow&, sf::RenderTexture&);
+	std::string element_names[7] = {
+		"Player",
+		"Projectile",
+		"Asteroid",
+		"Enemy_Spaceship",
+		"Engine",
+		"UI_Element",
+		"Unknown"
+	};
+
+	void draw_objects(sf::RenderWindow& window, sf::RenderTexture& buffer);
+	void draw_entities(sf::RenderWindow& window, sf::RenderTexture& buffer);
 
 public:
 	Engine(unsigned int render_width = 0, unsigned int render_height = 0)
@@ -46,16 +55,12 @@ public:
 	unsigned int render_width = 0;
 	unsigned int render_height = 0;
 
-	int object_count = 0;
-	int entity_count = 0;
-
-	int asteroid_count = 0;
-	int enemy_spaceship_count = 0;
-
 	sf::Clock* timer = new sf::Clock();
 
-	// Elements
-	std::vector<Object*> objects {};
+	// Logic
+	int object_count = 0;
+	std::vector<Element*> objects {};
+	int entity_count = 0;
 	std::vector<Entity*> entities {};
 
 	// Graphics
@@ -63,18 +68,20 @@ public:
 
 	// Start up
 	int initialize(Window&);
-
 	std::string load_textures();
 
 	// Runtime
 	float get_elapsed_time();
 
 	int spawn(
-		Object::SpawnableType,	// Type
-		Object::SpawnableType	// Owner
+		Element::Spawnable,	// Type
+		Element::Owner = {
+			Element::Spawner::Engine,
+			nullptr
+		} // Owner
 	);
 
-	void despawn(Object&);
+	void despawn(Element&);
 
 	// Entity logic
 	void execute_moves();

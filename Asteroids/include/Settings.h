@@ -5,8 +5,10 @@
 #define DEBUG_PLAYER_INFO false
 
 // Constants
-#define DECAY 0.99f
+#define DECAY 0.9975f
 #define RADIANS 3.14159f / 180.0f
+
+#define MOVEMENT_CONSTANT 1000.0f
 
 #define MAX_SPEED 500.0f
 #define MAX_ROTATION 180.0f
@@ -36,7 +38,7 @@ enum class RenderMode : int
 #define RENDER_MODE RenderMode::VECTORS
 
 #define FULLSCREEN false // Make the game fullscreen
-#define OLD_SCHOOL true // Make it pixelated!
+#define OLD_SCHOOL false // Make it pixelated!
 #define OLD_SCHOOL_FACTOR 4 // How much to divide the original resolution by
 
 #define WIDTH 0
