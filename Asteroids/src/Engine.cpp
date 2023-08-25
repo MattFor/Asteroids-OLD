@@ -7,83 +7,93 @@
 #include "Engine.h"
 
 // Runtime
-float Engine::get_elapsed_time()
+void Engine::handle_game_logic(Window& window)
 {
-	return this->timer->restart().asSeconds();
+	this->clear_screen(*window.hwnd, *window.render_buffer);
+
+	switch (RENDER_MODE)
+	{
+		case RenderMode::TEXTURES:
+		{
+			this->apply_textures();
+			break;
+		}
+	}
+
+	this->process_entites();
+	this->process_spawns();
+	this->process_despawns();
+	this->execute_moves();
+
+	this->display_all(*window.hwnd, *window.render_buffer, *window.shader);
 };
 
 int Engine::spawn(Element::Spawnable to_spawn, Element::Owner owner)
 {
 	switch (to_spawn)
 	{
-	case Element::Spawnable::Player:
-	{
-		Player* player = new Player(
-			++this->entity_count,
-			to_spawn,
-			// Using spawnable here to save creating a Spawner enum
-			Element::Owner{ Element::Spawner::Engine, nullptr }
-		);
-
-		// Set coordinates in the middle of the playable area
-		player->x = (float)render_width / 2;
-		player->y = (float)render_height / 2;
-
-		// Make it upright
-		if (OLD_SCHOOL)
+		case Element::Spawnable::Player:
 		{
-			player->angle = 180.0f;
-		}
+			Player* player = new Player(
+				++entity_count,
+				to_spawn,
+				// Using spawnable here to save creating a Spawner enum
+				Element::Owner{ Element::Spawner::Engine, nullptr }
+			);
 
-		if (DEBUG)
+			// Set coordinates in the middle of the playable area
+			player->x = (float)render_width / 2;
+			player->y = (float)render_height / 2;
+
+			if (DEBUG)
+			{
+				printf("Player spawn coordinates: X[%.2f] Y[%.2f]\n", player->x, player->y);
+			}
+
+			if (RENDER_MODE == RenderMode::VECTORS)
+			{
+				const float scale = (float)render_height / 1024.0f;
+
+				std::vector<sf::Vector2f> points = {
+					{ 0.0f * scale, -20.0f * scale },
+					{ -10.0f * scale, 20.0f * scale },
+					{ 10.0f * scale, 20.0f * scale }
+				};
+
+				player->set_shape(points, sf::Color::White, true);
+			}
+
+			entities.push_back(player);
+		}
+		break;
+
+		case Element::Spawnable::Projectile:
 		{
-			printf("Player spawn coordinates: X[%.2f] Y[%.2f]\n", player->x, player->y);
-		}
+			Entity* projectile = new Entity(++entity_count, to_spawn, owner);
 
-		if (RENDER_MODE == RenderMode::VECTORS)
+			if (RENDER_MODE == RenderMode::VECTORS)
+			{
+				const float scale = (float)render_height / 1024.0f;
+				projectile->set_shape(3.0f * scale, sf::Color::Yellow);
+			}
+
+			entities.push_back(projectile);
+		}
+		break;
+
+		default:
 		{
-			const float scale = (float)render_height / 1024.0f;
-
-			std::vector<sf::Vector2f> points = {
-				{ 0.0f * scale, -20.0f * scale },
-				{ -10.0f * scale, 20.0f * scale },
-				{ 10.0f * scale, 20.0f * scale }
-			};
-
-			player->set_shape(points, sf::Color::White, true);
+			Entity* entity = new Entity(++entity_count, to_spawn, owner);
+			entities.push_back(entity);
 		}
-
-		this->entities.push_back(player);
-	}
-	break;
-
-	case Element::Spawnable::Projectile:
-	{
-		Entity* projectile = new Entity(++this->entity_count, to_spawn, owner);
-
-		if (RENDER_MODE == RenderMode::VECTORS)
-		{
-			const float scale = (float)render_height / 1024.0f;
-			projectile->set_shape(3.0f * scale, sf::Color::Yellow);
-		}
-
-		this->entities.push_back(projectile);
-	}
-	break;
-
-	default:
-	{
-		Entity* entity = new Entity(++this->entity_count, to_spawn, owner);
-		this->entities.push_back(entity);
-	}
 	}
 
 	if (DEBUG)
 	{
-		printf("Added Entity #%d %s from %s\n", this->entity_count, element_names[(int)to_spawn].c_str(), element_names[(int)owner.type].c_str());
+		printf("Added Entity #%d %s from %s\n", entity_count, element_names[(int)to_spawn].c_str(), element_names[(int)owner.type].c_str());
 	}
 
-	return (int)this->entities.size() - 1;
+	return (int)entities.size() - 1;
 };
 
 void Engine::despawn(Element& element)
@@ -95,54 +105,80 @@ void Engine::despawn(Element& element)
 	}
 
 	entities.erase(std::remove(entities.begin(), entities.end(), &element), entities.end());
-}
+};
 
-// Entity Logic
-void Engine::calculate_moves()
+float Engine::get_elapsed_time()
 {
-	const float elapsed_time = get_elapsed_time();
+	return timer->restart().asSeconds();
+};
 
-	std::vector<Entity*> marked_for_deletion {};
-	std::vector<std::tuple<Element::Spawnable, Element::Owner>> spawns {};
+// Logic
+void Engine::process_entites()
+{
+	const float elapsed_time = this->get_elapsed_time();
 
-	for (auto it = entities.begin(); it != entities.end();)
+	for (auto it = this->entities.begin(); it != this->entities.end();)
 	{
 		Entity* entity = *it;
 
 		entity->calc_move(elapsed_time);
 
-		const bool OUT_OF_BOUNDS = entity->x > render_width || entity->x < 0 || entity->y > render_height || entity->y < 0;
-		if (OUT_OF_BOUNDS && entity->type == Element::Spawnable::Projectile)
+		if (this->process_collisions(*entity))
 		{
-			marked_for_deletion.push_back(entity);
-		}
+			entity->x = (entity->x > this->render_width) ? 0 : (entity->x < 0) ? this->render_width : entity->x;
+			entity->y = (entity->y > this->render_height) ? 0 : (entity->y < 0) ? this->render_height : entity->y;
 
-		entity->x = (entity->x > render_width) ? 0 : (entity->x < 0) ? render_width : entity->x;
-		entity->y = (entity->y > render_height) ? 0 : (entity->y < 0) ? render_height : entity->y;
-		entity->spawn_cooldown = std::max(entity->spawn_cooldown - 1, 0);
-
-		if (entity->spawn != Element::Spawnable::Unknown)
-		{
-			spawns.push_back({ entity->spawn, Element::Owner{ (Element::Spawner)entity->type, entity } });
-		}
-
-		if (DEBUG_PLAYER_INFO && entity->type == Element::Spawnable::Player)
-		{
-			printf("X[%.3f] Y[%.3f] A[%.3f] DX[%.3f] DY[%.3f] R[%.3f]\n", entity->x, entity->y, entity->angle, entity->dx, entity->dy, entity->rotation);
+			entity->spawn_cooldown = std::max(entity->spawn_cooldown - 1, 0);
+			if (entity->spawn != Element::Spawnable::Unknown)
+			{
+				this->to_spawn.push_back({ entity->spawn, Element::Owner{ (Element::Spawner)entity->type, entity } });
+			}
 		}
 
 		++it;
 	}
+};
 
-	// Spawn entities to prevent modifying entities while going through a vector
-	for (auto& [to_spawn, owner] : spawns)
+bool Engine::process_collisions(Element& element)
+{
+	bool marked = false;
+
+	if (Player* entity = dynamic_cast<Player*>(&element))
+	{
+		for (auto it = this->entities.begin(); it != this->entities.end();)
+		{
+			Entity* entity = *it;
+		}
+	}
+
+	const bool OUT_OF_BOUNDS = element.x > this->render_width || element.x < 0 || element.y > this->render_height || element.y < 0;
+	if (OUT_OF_BOUNDS && element.type == Element::Spawnable::Projectile)
+	{
+		marked = true;
+		goto DECIDE_FATE;
+	}
+
+DECIDE_FATE:
+	if (marked) {
+		this->to_delete.push_back(&element);
+		return false;
+	}
+	else
+	{
+		return true;
+	}
+};
+
+void Engine::process_spawns()
+{
+	for (auto& [to_spawn, owner] : this->to_spawn)
 	{
 		const int index = spawn(to_spawn, owner);
 
 		Entity* entity = dynamic_cast<Entity*>(owner.element);
 		if (entity->spawned_inheritance)
 		{
-			sf::FloatRect entity_bounds {};
+			sf::FloatRect entity_bounds{};
 			if (entity->shape != nullptr)
 			{
 				entity_bounds = entity->shape->getLocalBounds();
@@ -154,7 +190,7 @@ void Engine::calculate_moves()
 
 			const float y_offset = entity_bounds.height / 2.0f;
 
-			sf::FloatRect spawned_entity_bounds {};
+			sf::FloatRect spawned_entity_bounds{};
 			if (entities[index]->shape != nullptr)
 			{
 				spawned_entity_bounds = entities[index]->shape->getLocalBounds();
@@ -180,22 +216,31 @@ void Engine::calculate_moves()
 		entity->spawn = Element::Spawnable::Unknown;
 	}
 
+	// Clear the spawn array to prevent duplicates
+	this->to_spawn = {};
+};
+
+void Engine::process_despawns()
+{
 	// Deleting them here to prevent the same thing as well
-	for (Entity* entity : marked_for_deletion)
+	for (Element* entity : this->to_delete)
 	{
-		despawn(*entity);
+		this->despawn(*entity);
 	}
 
+	// Clear the array to prevent overlap
+	this->to_delete = {};
+
 	// Adjust the IDs
-	for (int i = 0; i < entities.size(); ++i)
+	for (int i = 0; i < this->entities.size(); ++i)
 	{
-		entities[i]->id = i;
+		this->entities[i]->id = i;
 	}
 };
 
 void Engine::execute_moves()
 {
-	for (Entity* entity : entities)
+	for (Entity* entity : this->entities)
 	{
 		entity->move();
 		entity->rotate();
@@ -215,23 +260,27 @@ void Engine::clear_screen(sf::RenderWindow& window, sf::RenderTexture& buffer)
 
 void Engine::apply_textures()
 {
-	for (Entity* entity : entities)
+	for (Entity* entity : this->entities)
 	{
 		entity->set_texture(*textures[(int)entity->type]);
 	}
 };
 
-void Engine::draw_all(sf::RenderWindow& window, sf::RenderTexture& buffer)
+void Engine::display_all(sf::RenderWindow& window, sf::RenderTexture& buffer, sf::Shader& shader)
 {
-	draw_objects(window, buffer);
-	draw_entities(window, buffer);
+	// Draw entities onto the render texture
+	this->draw_objects(window, buffer);
+	this->draw_entities(window, buffer);
 
-	// Apply filter
+	// Update buffer content after all drawing operations are done
 	if (OLD_SCHOOL)
 	{
+		buffer.display(); // Update the render texture
+
+		// Draw the render texture with the shader applied
 		sf::Sprite sprite;
 		sprite.setTexture(buffer.getTexture());
-		window.draw(sprite);
+		window.draw(sprite, &shader);
 	}
 
 	window.display();
@@ -241,29 +290,29 @@ void Engine::draw_entities(sf::RenderWindow& window, sf::RenderTexture& buffer)
 {
 	switch (RENDER_MODE)
 	{
-	case RenderMode::VECTORS:
-		if (OLD_SCHOOL)
-		{
-			for (Entity* entity : entities)
+		case RenderMode::VECTORS:
+			if (OLD_SCHOOL)
 			{
-				buffer.draw(*entity->shape);
+				for (Entity* entity : this->entities)
+				{
+					buffer.draw(*entity->shape);
+				}
 			}
-		}
-		else
-		{
-			for (Entity* entity : entities)
+			else
 			{
-				window.draw(*entity->shape);
+				for (Entity* entity : this->entities)
+				{
+					window.draw(*entity->shape);
+				}
 			}
-		}
-		break;
+			break;
 
-	case RenderMode::TEXTURES:
-		for (Entity* entity : entities)
-		{
-			window.draw(*entity->sprite);
-		}
-		break;
+		case RenderMode::TEXTURES:
+			for (Entity* entity : this->entities)
+			{
+				window.draw(*entity->sprite);
+			}
+			break;
 	}
 };
 
@@ -271,35 +320,38 @@ void Engine::draw_objects(sf::RenderWindow& window, sf::RenderTexture& buffer)
 {
 	switch (RENDER_MODE)
 	{
-	case RenderMode::VECTORS:
-		if (OLD_SCHOOL)
-		{
-			for (Element* object : objects)
+		case RenderMode::VECTORS:
+			if (OLD_SCHOOL)
 			{
-				buffer.draw(*object->shape);
+				for (Element* object : this->objects)
+				{
+					buffer.draw(*object->shape);
+				}
 			}
-		}
-		else
-		{
-			for (Element* object : objects)
+			else
 			{
-				window.draw(*object->shape);
+				for (Element* object : this->objects)
+				{
+					window.draw(*object->shape);
+				}
 			}
-		}
-		break;
+			break;
 
-	case RenderMode::TEXTURES:
-		for (Element* object : objects)
-		{
-			window.draw(*object->sprite);
-		}
-		break;
+		case RenderMode::TEXTURES:
+			for (Element* object : this->objects)
+			{
+				window.draw(*object->sprite);
+			}
+			break;
 	}
 };
 
 // Start up
 int Engine::initialize(Window& window)
 {
+	srand((unsigned int)time(nullptr));
+	printf("Random number generation initiated.");
+
 	if (OLD_SCHOOL && RENDER_MODE != RenderMode::VECTORS)
 	{
 		printf("Cannot play in old school mode without being in the VECTOR graphics mode.\n");
@@ -308,31 +360,31 @@ int Engine::initialize(Window& window)
 
 	switch (RENDER_MODE)
 	{
-	case RenderMode::VECTORS:
-		if (DEBUG)
-		{
-			printf("Initializing in VECTOR GRAPHICS mode.\n");
-		}
-		break;
+		case RenderMode::VECTORS:
+			if (DEBUG)
+			{
+				printf("Initializing in VECTOR GRAPHICS mode.\n");
+			}
+			break;
 
-	case RenderMode::TEXTURES:
-		if (DEBUG)
-		{
-			printf("Initializing in TEXTURE GRAPHICS mode.\n");
-		}
+		case RenderMode::TEXTURES:
+			if (DEBUG)
+			{
+				printf("Initializing in TEXTURE GRAPHICS mode.\n");
+			}
 
-		std::string error = load_textures();
+			std::string error = load_textures();
 
-		if (error != "")
-		{
-			printf(error.c_str());
-			return LOADING_TEXTURE_FAILURE;
-		}
-		break;
+			if (error != "")
+			{
+				printf(error.c_str());
+				return LOADING_TEXTURE_FAILURE;
+			}
+			break;
 	}
 
 	// Add player entity
-	spawn(Element::Spawnable::Player, Element::Owner{ Element::Spawner::Engine, nullptr });
+	this->spawn(Element::Spawnable::Player, Element::Owner{ Element::Spawner::Engine, nullptr });
 
 	return STARTUP_SUCCESS;
 };

@@ -21,6 +21,9 @@ public:
 
 	float rotation = 0.0f;
 
+	double x_mov_mod = 1.00000000000f;
+	double y_mov_mod = 1.00000000000f;
+
 	// Gameplay
 	int spawn_cooldown = 0;
 

@@ -45,16 +45,16 @@ public:
 
 		switch (type)
 		{
-		case Spawnable::Player:
-		case Spawnable::Projectile:
-		case Spawnable::Asteroid:
-		case Spawnable::Enemy_Spaceship:
-			this->_type = Type::Dynamic;
-			break;
-		case Spawnable::UI_Element:
-		case Spawnable::Unknown:
-			this->_type = Type::Static;
-			break;
+			case Spawnable::Player:
+			case Spawnable::Projectile:
+			case Spawnable::Asteroid:
+			case Spawnable::Enemy_Spaceship:
+				this->_type = Type::Dynamic;
+				break;
+			case Spawnable::UI_Element:
+			case Spawnable::Unknown:
+				this->_type = Type::Static;
+				break;
 		}
 	};
 	virtual ~Element()
@@ -79,8 +79,8 @@ public:
 	// - VECTORS Mode
 	sf::Shape* shape = nullptr;
 
-	virtual void set_shape(const float = 1.0f, sf::Color = sf::Color::Yellow);
-	virtual void set_shape(std::vector<sf::Vector2f>, sf::Color = sf::Color::White, bool wireframe = true);
+	virtual void set_shape(const float = 1.0f, sf::Color = sf::Color::Yellow, bool wireframe = false, const float thickness = 5.0f / (OLD_SCHOOL ? 1.0f : 5.0f));
+	virtual void set_shape(std::vector<sf::Vector2f>, sf::Color = sf::Color::White, bool wireframe = false, const float thickness = 5.0f / (OLD_SCHOOL ? 1.0f : 5.0f));
 
 	// - TEXTURES Mode
 	sf::Sprite* sprite = nullptr;
@@ -97,6 +97,8 @@ protected:
 	};
 
 	Type _type = Type::Unknown;
+
+	void set_outline(sf::Shape&, sf::Color, bool wireframe, const float thickness);
 };
 
 #endif // !_ELEMENT_H

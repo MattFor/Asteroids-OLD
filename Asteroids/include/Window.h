@@ -42,28 +42,36 @@ public:
 			}
 		}
 
+		this->render_width = this->width;
+		this->render_height = this->height;
+
 		if (OLD_SCHOOL)
 		{
-			this->render_width = this->width / OLD_SCHOOL_FACTOR;
-			this->render_height = this->height / OLD_SCHOOL_FACTOR;
-
 			if (DEBUG)
 			{
 				printf(("Old school mode enabled, new render resolution: " + std::to_string(this->render_width) + "x" + std::to_string(this->render_height) + '\n').c_str());
 			}
 
 			this->render_buffer = new sf::RenderTexture();
-			if (!render_buffer->create(this->render_width, this->render_height))
+			if (!this->render_buffer->create(this->render_width, this->render_height))
 			{
 				printf("Critical error - could not spawn render texture!\n");
 			}
-		}
-		else
-		{
-			this->render_width = this->width;
-			this->render_height = this->height;
+
+			this->shader = new sf::Shader();
+			if (!this->shader->loadFromFile("./resources/shaders/old_school.frag", sf::Shader::Fragment))
+			{
+				printf("Failed to load old_school.frag shader!\n");
+			}
+
+			// Set shader uniforms
+			this->shader->setUniform("texture", sf::Shader::CurrentTexture);
+			this->shader->setUniform("resolution", sf::Glsl::Vec2(
+				(float)this->render_width, (float)this->render_height)
+			);
 		}
 
+		this->hwnd = new sf::RenderWindow();
 		this->hwnd->create(
 			sf::VideoMode(this->width, this->height),
 			"Asteroids",
@@ -85,6 +93,7 @@ public:
 	~Window()
 	{
 		delete hwnd;
+		delete shader;
 		delete render_buffer;
 	};
 
@@ -94,7 +103,8 @@ public:
 	unsigned int render_width = 0;
 	unsigned int render_height = 0;
 
-	sf::RenderWindow* hwnd = new sf::RenderWindow();
+	sf::Shader* shader = nullptr;
+	sf::RenderWindow* hwnd = nullptr;
 	sf::RenderTexture* render_buffer = nullptr;
 
 	void clear();

@@ -7,7 +7,7 @@
 int Asteroids::initialize()
 {
 	// Start the engine and load the textures.
-	if (!this->engine->initialize(*this->window))
+	if (!this->engine->initialize(*window))
 		return STARTUP_ERROR;
 
 	if (DEBUG)
@@ -27,18 +27,18 @@ int Asteroids::initialize()
 			).c_str());
 	}
 
-	sf::Event event {};
+	sf::Event event{};
 	while (this->window->hwnd->isOpen())
 	{
 		while (this->window->hwnd->pollEvent(event))
 		{
 			switch (event.type)
 			{
-			case sf::Event::Closed:
-			EXIT_GAME:
-				this->window->hwnd->close();
-				delete this->engine;
-				return EXIT_SUCCESS;
+				case sf::Event::Closed:
+				EXIT_GAME:
+					this->window->hwnd->close();
+					delete this->engine;
+					return EXIT_SUCCESS;
 			}
 		}
 
@@ -47,17 +47,24 @@ int Asteroids::initialize()
 			goto EXIT_GAME;
 		}
 
-		this->engine->clear_screen(*this->window->hwnd, *this->window->render_buffer);
-
-		if (RENDER_MODE == RenderMode::TEXTURES)
+		if (sf::Keyboard::isKeyPressed(sf::Keyboard::M))
 		{
-			this->engine->apply_textures();
+			const int asteroid_id = this->engine->spawn(
+				Element::Spawnable::Asteroid
+			);
+
+			this->engine->entities[asteroid_id]->x = (float)(rand() % this->window->render_width);
+			this->engine->entities[asteroid_id]->y = (float)(rand() % this->window->render_height);
+
+			this->engine->entities[asteroid_id]->set_shape(20.0f, sf::Color::Red, true);
+
+			this->engine->entities[asteroid_id]->angle = std::clamp((float)(rand() % 10 + rand() % 360), 0.0f, 360.0f);
+
+			this->engine->entities[asteroid_id]->x_mov_mod = 0.3f;
+			this->engine->entities[asteroid_id]->y_mov_mod = 0.3f;
 		}
 
-		this->engine->calculate_moves();
-		this->engine->execute_moves();
-
-		this->engine->draw_all(*this->window->hwnd, *this->window->render_buffer);
+		this->engine->handle_game_logic(*this->window);
 	}
 
 	return EXIT_SUCCESS;

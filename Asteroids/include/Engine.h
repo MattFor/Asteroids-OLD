@@ -27,8 +27,8 @@ private:
 		"Unknown"
 	};
 
-	void draw_objects(sf::RenderWindow& window, sf::RenderTexture& buffer);
-	void draw_entities(sf::RenderWindow& window, sf::RenderTexture& buffer);
+	void draw_objects(sf::RenderWindow&, sf::RenderTexture&);
+	void draw_entities(sf::RenderWindow&, sf::RenderTexture&);
 
 public:
 	Engine(unsigned int render_width = 0, unsigned int render_height = 0)
@@ -59,12 +59,15 @@ public:
 
 	// Logic
 	int object_count = 0;
-	std::vector<Element*> objects {};
+	std::vector<Element*> objects{};
 	int entity_count = 0;
-	std::vector<Entity*> entities {};
+	std::vector<Entity*> entities{};
+
+	std::vector<Element*> to_delete{};
+	std::vector<std::tuple<Element::Spawnable, Element::Owner>> to_spawn{};
 
 	// Graphics
-	std::vector<sf::Texture*> textures {};
+	std::vector<sf::Texture*> textures{};
 
 	// Start up
 	int initialize(Window&);
@@ -83,14 +86,22 @@ public:
 
 	void despawn(Element&);
 
-	// Entity logic
-	void execute_moves();
-	void calculate_moves();
+	// Logic
+	void handle_game_logic(Window&);
 
 	// Graphics
 	void apply_textures();
-	void draw_all(sf::RenderWindow&, sf::RenderTexture&);
 	void clear_screen(sf::RenderWindow&, sf::RenderTexture&);
+	void display_all(sf::RenderWindow&, sf::RenderTexture&, sf::Shader&);
+
+private:
+	// Logic
+	void execute_moves();
+	void process_spawns();
+	void process_despawns();
+	void process_entites();
+
+	bool process_collisions(Element&);
 };
 
 #endif // !_ENGINE_H
